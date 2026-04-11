@@ -9,8 +9,8 @@ public class Order {
     private final long timestamp;
     private final Side side;
 
-    public Order(UUID orderId, double price, double quantity, Side side) {
-        this.orderId = orderId;
+    public Order(double price, double quantity, Side side) {
+        this.orderId = UUID.randomUUID();
 
         if (price <= 0.0) {
             throw new IllegalArgumentException("Price must be positive: " + price);

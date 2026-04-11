@@ -8,7 +8,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-class OrderBookTest {
+public class OrderBookTest {
     private OrderBook orderBook;
 
     @BeforeEach
@@ -18,7 +18,7 @@ class OrderBookTest {
 
     @Test
     void shouldAddBuyOrderToBids() {
-        Order order = new Order(UUID.randomUUID(), 100.0, 10.0, Side.BUY);
+        Order order = new Order(100.0, 10.0, Side.BUY);
 
         orderBook.addOrder(order);
 
@@ -28,7 +28,7 @@ class OrderBookTest {
 
     @Test
     void shouldAddSellOrderToAsks() {
-        Order order = new Order(UUID.randomUUID(), 100.0, 10.0, Side.SELL);
+        Order order = new Order(100.0, 10.0, Side.SELL);
 
         orderBook.addOrder(order);
 
@@ -38,30 +38,30 @@ class OrderBookTest {
 
     @Test
     void shouldTrackBestBidsAsHighestPrice() {
-        orderBook.addOrder(new Order(UUID.randomUUID(), 100.14, 10.0, Side.BUY));
-        orderBook.addOrder(new Order(UUID.randomUUID(), 90.0, 10.0, Side.BUY));
-        orderBook.addOrder(new Order(UUID.randomUUID(), 80.0, 10.0, Side.BUY));
+        orderBook.addOrder(new Order(100.14, 10.0, Side.BUY));
+        orderBook.addOrder(new Order(90.0, 10.0, Side.BUY));
+        orderBook.addOrder(new Order(80.0, 10.0, Side.BUY));
 
         assertEquals(100.14, orderBook.getBestBid());
     }
 
     @Test
     void shouldTrackBestAsksAsLowestPrice() {
-        orderBook.addOrder(new Order(UUID.randomUUID(), 100.14, 10.0, Side.SELL));
-        orderBook.addOrder(new Order(UUID.randomUUID(), 90.0, 10.0, Side.SELL));
-        orderBook.addOrder(new Order(UUID.randomUUID(), 80.23, 10.0, Side.SELL));
+        orderBook.addOrder(new Order(100.14, 10.0, Side.SELL));
+        orderBook.addOrder(new Order(90.0, 10.0, Side.SELL));
+        orderBook.addOrder(new Order(80.23, 10.0, Side.SELL));
 
         assertEquals(80.23, orderBook.getBestAsk());
     }
 
     @Test
     void shouldTrackOrderCountAtPrice() {
-        orderBook.addOrder(new Order(UUID.randomUUID(), 100.0, 10.0, Side.BUY));
-        orderBook.addOrder(new Order(UUID.randomUUID(), 100.0, 20.0, Side.BUY));
+        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY));
+        orderBook.addOrder(new Order(100.0, 20.0, Side.BUY));
 
-        orderBook.addOrder(new Order(UUID.randomUUID(), 100.0, 30.0, Side.SELL));
-        orderBook.addOrder(new Order(UUID.randomUUID(), 100.0, 40.0, Side.SELL));
-        orderBook.addOrder(new Order(UUID.randomUUID(), 101.0, 50.0, Side.SELL));
+        orderBook.addOrder(new Order(100.0, 30.0, Side.SELL));
+        orderBook.addOrder(new Order(100.0, 40.0, Side.SELL));
+        orderBook.addOrder(new Order(101.0, 50.0, Side.SELL));
 
 
         assertEquals(2, orderBook.getOrderCountAtPrice(100.0, Side.BUY));
