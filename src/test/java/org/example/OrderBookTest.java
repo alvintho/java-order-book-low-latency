@@ -59,6 +59,13 @@ class OrderBookTest {
         orderBook.addOrder(new Order(UUID.randomUUID(), 100.0, 10.0, Side.BUY));
         orderBook.addOrder(new Order(UUID.randomUUID(), 100.0, 20.0, Side.BUY));
 
+        orderBook.addOrder(new Order(UUID.randomUUID(), 100.0, 30.0, Side.SELL));
+        orderBook.addOrder(new Order(UUID.randomUUID(), 100.0, 40.0, Side.SELL));
+        orderBook.addOrder(new Order(UUID.randomUUID(), 101.0, 50.0, Side.SELL));
+
+
         assertEquals(2, orderBook.getOrderCountAtPrice(100.0, Side.BUY));
+        assertEquals(2, orderBook.getOrderCountAtPrice(100.0, Side.SELL));
+        assertEquals(1, orderBook.getOrderCountAtPrice(101.0, Side.SELL));
     }
 }
