@@ -55,7 +55,7 @@ class OrderBookTest {
     }
 
     @Test
-    void shouldGroupOrderAtSamePriceLevel() {
+    void shouldTrackOrderCountAtPrice() {
         orderBook.addOrder(new Order(UUID.randomUUID(), 100.0, 10.0, Side.BUY));
         orderBook.addOrder(new Order(UUID.randomUUID(), 100.0, 20.0, Side.BUY));
 
