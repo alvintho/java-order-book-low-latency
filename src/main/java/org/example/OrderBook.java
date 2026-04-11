@@ -4,8 +4,8 @@ import java.util.*;
 
 public class OrderBook {
     private double totalVolume; // sum of all Bids + Sum of all Asks
-    private final TreeMap<Double, Queue<Order>> bids = new TreeMap<>(Collections.reverseOrder());
-    private final TreeMap<Double, Queue<Order>> asks = new TreeMap<>();
+    private final TreeMap<Double, Queue<Order>> bids = new TreeMap<>(Collections.reverseOrder()); // Buy to the lowest asker
+    private final TreeMap<Double, Queue<Order>> asks = new TreeMap<>(); // Sell to the highest bidder
     private final Map<UUID, Order> orderMap = new HashMap<>();
 
     public OrderBook() {
@@ -30,5 +30,13 @@ public class OrderBook {
 
     public double getBestAsk() {
         return asks.isEmpty() ? Double.NaN : asks.firstKey();
+    }
+
+    public int getOrderCountAtPrice(double price, Side side) {
+        TreeMap<Double, Queue<Order>> book = side == Side.BUY ? bids : asks;
+
+        Queue<Order> orders =  book.get(price);
+
+        return orders.size();
     }
 }
