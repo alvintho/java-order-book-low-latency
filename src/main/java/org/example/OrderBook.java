@@ -4,6 +4,8 @@ import java.util.*;
 
 public class OrderBook {
     private double totalVolume; // sum of all Bids + Sum of all Asks
+    private double totalBidVolume;
+    private double totalAskVolume;
     private final TreeMap<Double, Queue<Order>> bids = new TreeMap<>(Collections.reverseOrder()); // Buy to the lowest asker
     private final TreeMap<Double, Queue<Order>> asks = new TreeMap<>(); // Sell to the highest bidder
     private final Map<UUID, Order> orderMap = new HashMap<>();
@@ -12,16 +14,32 @@ public class OrderBook {
         this.totalVolume = 0;
     }
 
-    public double getTotalVolume() {
-        return this.totalVolume;
+    public void addOrder(Order order) {
+        if (order == null) {
+            throw new IllegalArgumentException("Order cannot be null");
+        }
+
+        TreeMap<Double, Queue<Order>> book = order.isBid() ? bids : asks;
+        book.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
+        this.orderMap.put(order.getOrderId(), order);
+
+        this.totalVolume += order.getQuantity();
+
+        if (order.isBid()) {
+            this.totalBidVolume += order.getQuantity();
+        } else {
+            this.totalAskVolume += order.getQuantity();
+        }
     }
 
-    public void addOrder(Order order) {
+    public void removeOrder(Order order) {
+        if (order == null) {
+            throw new IllegalArgumentException("Order cannot be null");
+        }
+
         TreeMap<Double, Queue<Order>> book = order.isBid() ? bids : asks;
-
-        book.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
-
-        this.orderMap.put(order.getOrderId(), order);
+        Queue<Order> orders = book.get(order.getPrice());
+        orders.remove(order);
     }
 
     public double getBestBid() {
@@ -38,5 +56,9 @@ public class OrderBook {
         Queue<Order> orders =  book.get(price);
 
         return orders.size();
+    }
+
+    public double getTotalVolume() {
+        return this.totalVolume;
     }
 }

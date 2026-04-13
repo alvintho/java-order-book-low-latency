@@ -3,8 +3,6 @@ package org.example;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -37,6 +35,19 @@ public class OrderBookTest {
     }
 
     @Test
+    void shouldRemoveBuyOrderFromBids() {
+        Order order = new Order(100.0, 10.0, Side.BUY);
+        Order order2 = new Order(90.0, 10.0, Side.BUY);
+
+        orderBook.addOrder(order);
+        orderBook.removeOrder(order);
+
+        assertEquals(Double.NaN, orderBook.getBestBid());
+        assertEquals(Double.NaN, orderBook.getBestAsk());
+    }
+
+
+    @Test
     void shouldTrackBestBidsAsHighestPrice() {
         orderBook.addOrder(new Order(100.14, 10.0, Side.BUY));
         orderBook.addOrder(new Order(90.0, 10.0, Side.BUY));
@@ -67,5 +78,17 @@ public class OrderBookTest {
         assertEquals(2, orderBook.getOrderCountAtPrice(100.0, Side.BUY));
         assertEquals(2, orderBook.getOrderCountAtPrice(100.0, Side.SELL));
         assertEquals(1, orderBook.getOrderCountAtPrice(101.0, Side.SELL));
+    }
+
+    @Test
+    void shouldGetTotalVolume() {
+        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY));
+        orderBook.addOrder(new Order(100.0, 20.0, Side.BUY));
+
+        orderBook.addOrder(new Order(100.0, 30.0, Side.SELL));
+        orderBook.addOrder(new Order(100.0, 40.0, Side.SELL));
+        orderBook.addOrder(new Order(101.0, 50.0, Side.SELL));
+
+        assertEquals(150.0, orderBook.getTotalVolume());
     }
 }
