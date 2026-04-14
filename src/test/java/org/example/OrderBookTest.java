@@ -35,15 +35,55 @@ public class OrderBookTest {
     }
 
     @Test
-    void shouldRemoveBuyOrderFromBids() {
+    void shouldNotAddInvalidOrder() {
+        assertThrows(IllegalArgumentException.class, () -> orderBook.addOrder(null));
+    }
+
+    @Test
+    void shouldGetOrderFromOrderMap() {
         Order order = new Order(100.0, 10.0, Side.BUY);
-        Order order2 = new Order(90.0, 10.0, Side.BUY);
 
         orderBook.addOrder(order);
+        Order retrievedOrder = orderBook.getOrder(order);
+        assertEquals(order.getOrderId(), retrievedOrder.getOrderId());
+    }
+
+    @Test
+    void shouldNotGetNonExistingOrderFromOrderMap() {
+        Order order = new Order(100.0, 10.0, Side.BUY);
+
+        assertEquals(null, orderBook.getOrder(order));
+        assertThrows(NullPointerException.class, () -> orderBook.getOrder(null));
+    }
+
+    @Test
+    void shouldSuccessfullyRemoveExistingOrder() {
+        Order order = new Order(100.0, 10.0, Side.BUY);
+        Order order2 = new Order(100.0, 10.0, Side.SELL);
+
+        orderBook.addOrder(order);
+        orderBook.addOrder(order2);
+
         orderBook.removeOrder(order);
+        orderBook.removeOrder(order2);
 
         assertEquals(Double.NaN, orderBook.getBestBid());
         assertEquals(Double.NaN, orderBook.getBestAsk());
+
+        assertEquals(0.0, orderBook.getTotalVolume());
+        assertEquals(0.0, orderBook.getTotalBidVolume());
+        assertEquals(0.0, orderBook.getTotalAskVolume());
+
+        assertEquals(0, orderBook.getOrderCountAtPrice(100.0, Side.BUY));
+        assertEquals(0, orderBook.getOrderCountAtPrice(100.0, Side.SELL));
+    }
+
+    @Test
+    void shouldNotRemoveNonExistingOrder() {
+        Order order = new Order(100.0, 10.0, Side.BUY);
+
+        assertThrows(IllegalStateException.class, () -> orderBook.removeOrder(order));
+        assertThrows(IllegalArgumentException.class, () -> orderBook.removeOrder(null));
     }
 
 

@@ -12,6 +12,8 @@ public class OrderBook {
 
     public OrderBook() {
         this.totalVolume = 0;
+        this.totalBidVolume = 0;
+        this.totalAskVolume = 0;
     }
 
     public void addOrder(Order order) {
@@ -22,7 +24,6 @@ public class OrderBook {
         TreeMap<Double, Queue<Order>> book = order.isBid() ? bids : asks;
         book.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
         this.orderMap.put(order.getOrderId(), order);
-
         this.totalVolume += order.getQuantity();
 
         if (order.isBid()) {
@@ -37,9 +38,38 @@ public class OrderBook {
             throw new IllegalArgumentException("Order cannot be null");
         }
 
+        if (!orderMap.containsKey(order.getOrderId())) {
+            throw new IllegalStateException("Order " + order.getOrderId() + " not found");
+        }
+
         TreeMap<Double, Queue<Order>> book = order.isBid() ? bids : asks;
-        Queue<Order> orders = book.get(order.getPrice());
-        orders.remove(order);
+        Queue<Order> ordersAtPrice = book.get(order.getPrice());
+
+        if (ordersAtPrice == null) {
+            throw new IllegalStateException("Order " + order.getOrderId() + " not found at price " + order.getPrice());
+        }
+
+        ordersAtPrice.remove(order);
+
+        if (ordersAtPrice.isEmpty()) {
+            book.remove(order.getPrice());
+        }
+
+        this.totalVolume -= order.getQuantity();
+        orderMap.remove(order.getOrderId());
+        if (order.isBid()) {
+            this.totalBidVolume -= order.getQuantity();
+        } else {
+            this.totalAskVolume -= order.getQuantity();
+        }
+    }
+
+    public double getTotalBidVolume() {
+        return this.totalBidVolume;
+    }
+
+    public double getTotalAskVolume() {
+        return this.totalAskVolume;
     }
 
     public double getBestBid() {
@@ -55,7 +85,15 @@ public class OrderBook {
 
         Queue<Order> orders =  book.get(price);
 
+        if (orders == null) {
+            return 0;
+        }
+
         return orders.size();
+    }
+
+    public Order getOrder(Order order) {
+        return this.orderMap.get(order.getOrderId());
     }
 
     public double getTotalVolume() {
