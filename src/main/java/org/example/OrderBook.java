@@ -16,12 +16,61 @@ public class OrderBook {
         this.totalAskVolume = 0;
     }
 
-    public void addOrder(Order order) {
-        if (order == null) {
+    private Trade matchOrder(Order incomingOrder, TreeMap<Double, Queue<Order>> oppositeBook) {
+        if (oppositeBook.isEmpty()) return null;
+
+        double incomingOrderPrice = incomingOrder.getPrice();
+        double bestOppositePrice = oppositeBook.firstKey();
+
+        boolean isPriceMatch = incomingOrder.isBid()
+                ? incomingOrderPrice >= bestOppositePrice
+                : incomingOrderPrice <= bestOppositePrice;
+
+        if (!isPriceMatch) return null;
+
+        boolean isOpposingOrdersEmpty = oppositeBook.firstEntry().getValue().isEmpty();
+
+        if (isOpposingOrdersEmpty) {
+            oppositeBook.remove(bestOppositePrice);
+            return null;
+        }
+
+        // Execute trade
+        Order restingOrder = oppositeBook.firstEntry().getValue().poll();
+        double tradeQuantity = Math.min(incomingOrder.getQuantity(), restingOrder.getQuantity());
+
+        incomingOrder.reduceQuantity(tradeQuantity);
+        restingOrder.reduceQuantity(tradeQuantity);
+
+        if (restingOrder.isFilled()) {
+            this.orderMap.remove(restingOrder.getOrderId());
+            Queue<Order> ordersAtPrice = oppositeBook.get(restingOrder.getPrice());
+            if (ordersAtPrice != null) {
+                ordersAtPrice.remove(restingOrder);
+                if (ordersAtPrice.isEmpty()) {
+                    oppositeBook.remove(restingOrder.getPrice());
+                }
+            }
+
+            if (restingOrder.isBid()) {
+                this.totalBidVolume -= tradeQuantity;
+            } else {
+                this.totalAskVolume -= tradeQuantity;
+            }
+        }
+
+        return new Trade(bestOppositePrice, tradeQuantity);
+    }
+
+    public Trade addOrder(Order order) {
+        if (order == null || order.getOrderId() == null) {
             throw new IllegalArgumentException("Order cannot be null");
         }
 
-        TreeMap<Double, Queue<Order>> book = order.isBid() ? bids : asks;
+        boolean isBidOrder = order.isBid();
+        TreeMap<Double, Queue<Order>> book = isBidOrder ? bids : asks;
+        TreeMap<Double, Queue<Order>> oppositeBook = isBidOrder ? asks : bids;
+
         book.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
         this.orderMap.put(order.getOrderId(), order);
         this.totalVolume += order.getQuantity();
@@ -31,6 +80,28 @@ public class OrderBook {
         } else {
             this.totalAskVolume += order.getQuantity();
         }
+
+        Trade trade = this.matchOrder(order, oppositeBook);
+
+        if (trade != null) {
+            this.totalVolume -= trade.getQuantity() * 2;
+
+            if (order.isBid()) {
+                this.totalBidVolume -= trade.getQuantity();
+            } else {
+                this.totalAskVolume -= trade.getQuantity();
+            }
+
+            this.orderMap.remove(order.getOrderId());
+            book.get(order.getPrice()).remove(order);
+            if (book.get(order.getPrice()).isEmpty()) {
+                book.remove(order.getPrice());
+            }
+
+            return trade;
+        }
+
+        return null;
     }
 
     public void removeOrder(Order order) {

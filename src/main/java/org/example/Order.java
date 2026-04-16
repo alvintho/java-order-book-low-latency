@@ -5,7 +5,7 @@ import java.util.UUID;
 public class Order {
     private final UUID orderId;;
     private final double price;
-    private final double quantity;
+    private double quantity; // partial fills are allowed
     private final long timestamp;
     private final Side side;
 
@@ -48,5 +48,13 @@ public class Order {
 
     public boolean isBid() {
         return this.side == Side.BUY;
+    }
+
+    public void reduceQuantity(double tradeQuantity) {
+        this.quantity -= tradeQuantity;
+    }
+
+    public boolean isFilled() {
+        return this.quantity == 0;
     }
 }
