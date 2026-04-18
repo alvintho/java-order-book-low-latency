@@ -15,11 +15,19 @@ public class Trade {
         this.timestamp = System.nanoTime();
     }
 
+    public UUID getTradeId() {
+        return this.tradeId;
+    }
+
     public double getQuantity() {
         return this.quantity;
     }
 
     public double getPrice() {
         return this.price;
+    }
+
+    public long getTimestamp() {
+        return this.timestamp;
     }
 }
