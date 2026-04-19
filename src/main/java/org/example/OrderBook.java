@@ -65,17 +65,7 @@ public class OrderBook {
         this.orderMap.put(order.getOrderId(), order);
         this.addVolume(order.getQuantity(), order.getSide());
 
-        // Order Matching Logic
-        Trade trade = this.matchOrder(order);
-
-        if (trade != null) {
-            this.removeOrderFromBook(order);
-            this.removeVolume(trade.getQuantity(), order.getSide());
-
-            return trade;
-        }
-
-        return null;
+        return this.matchOrder(order);
     }
 
     public void removeOrder(Order order) {
@@ -91,7 +81,7 @@ public class OrderBook {
         this.removeVolume(order.getQuantity(), order.getSide());
     }
 
-    public Trade matchOrder(Order incomingOrder) {
+    private Trade matchOrder(Order incomingOrder) {
         TreeMap<Double, Queue<Order>> oppositeBook = incomingOrder.isBid() ? asks : bids;
 
         if (oppositeBook.isEmpty()) return null;
@@ -124,10 +114,15 @@ public class OrderBook {
         restingOrder.reduceQuantity(tradeQuantity);
 
         removeVolume(tradeQuantity, restingOrder.getSide()); // Always remove traded volume from resting side
+        removeVolume(tradeQuantity, incomingOrder.getSide());
 
         // Handle full fills
         if (restingOrder.isFilled()) {
             this.removeOrderFromBook(restingOrder);
+        }
+
+        if (incomingOrder.isFilled()) {
+            this.removeOrderFromBook(incomingOrder);
         }
 
         return new Trade(bestOppositePrice, tradeQuantity);

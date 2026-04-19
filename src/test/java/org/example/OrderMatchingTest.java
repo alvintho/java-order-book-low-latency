@@ -104,4 +104,49 @@ public class OrderMatchingTest {
         assertEquals(5.0, orderBook.getTotalVolume());
     }
 
+    @Test
+    void shouldPartiallyFillWhenIncomingOrderVolumeIsLarger() {
+        Order buyOrder = new Order(100.0, 10.0, Side.BUY);
+        Order sellOrder = new Order(100.0, 15.0, Side.SELL);
+
+        orderBook.addOrder(buyOrder);
+        Trade trade = orderBook.addOrder(sellOrder);
+
+        assertNotNull(trade);
+        assertEquals(100.0, trade.getPrice());
+        assertEquals(10.0, trade.getQuantity());
+
+        assertEquals(Double.NaN, orderBook.getBestBid());
+        assertEquals(100.0, orderBook.getBestAsk());
+
+        assertEquals(0.0, orderBook.getTotalBidVolume());
+        assertEquals(5.0, orderBook.getTotalAskVolume());
+        assertEquals(5.0, orderBook.getTotalVolume());
+    }
+
+    @Test
+    void shouldMatchOldestOrderFirstAtSamePrice() { // price-time priority
+        Order firstBuy = new Order(100.0, 5.0, Side.BUY);
+        Order secondBuy = new Order(100.0, 5.0, Side.BUY);
+        Order sellOrder = new Order(100.0, 5.0, Side.SELL);
+
+        orderBook.addOrder(firstBuy);
+        orderBook.addOrder(secondBuy);
+        Trade trade = orderBook.addOrder(sellOrder);
+
+        assertNotNull(trade);
+        assertEquals(5.0, trade.getQuantity());
+
+        // First buy should be filled and removed
+        assertNull(orderBook.getOrder(firstBuy));
+
+        // Second buy should still be resting
+        assertNotNull(orderBook.getOrder(secondBuy));
+        assertEquals(1, orderBook.getOrderCountAtPrice(100.0, Side.BUY));
+
+        assertEquals(5.0, orderBook.getTotalBidVolume());
+        assertEquals(0.0, orderBook.getTotalAskVolume());
+        assertEquals(5.0, orderBook.getTotalVolume());
+    }
+
 }
