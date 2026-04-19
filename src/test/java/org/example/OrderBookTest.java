@@ -57,9 +57,9 @@ public class OrderBookTest {
     }
 
     @Test
-    void shouldSuccessfullyRemoveExistingOrder() {
+    void shouldSuccessfullyRemoveExistingUnmatchedOrder() {
         Order order = new Order(100.0, 10.0, Side.BUY);
-        Order order2 = new Order(100.0, 10.0, Side.SELL);
+        Order order2 = new Order(101.0, 10.0, Side.SELL);
 
         orderBook.addOrder(order);
         orderBook.addOrder(order2);
@@ -110,14 +110,14 @@ public class OrderBookTest {
         orderBook.addOrder(new Order(100.0, 10.0, Side.BUY));
         orderBook.addOrder(new Order(100.0, 20.0, Side.BUY));
 
-        orderBook.addOrder(new Order(100.0, 30.0, Side.SELL));
-        orderBook.addOrder(new Order(100.0, 40.0, Side.SELL));
-        orderBook.addOrder(new Order(101.0, 50.0, Side.SELL));
+        orderBook.addOrder(new Order(101.0, 30.0, Side.SELL));
+        orderBook.addOrder(new Order(101.0, 40.0, Side.SELL));
+        orderBook.addOrder(new Order(102.0, 50.0, Side.SELL));
 
 
         assertEquals(2, orderBook.getOrderCountAtPrice(100.0, Side.BUY));
-        assertEquals(2, orderBook.getOrderCountAtPrice(100.0, Side.SELL));
-        assertEquals(1, orderBook.getOrderCountAtPrice(101.0, Side.SELL));
+        assertEquals(2, orderBook.getOrderCountAtPrice(101.0, Side.SELL));
+        assertEquals(1, orderBook.getOrderCountAtPrice(102.0, Side.SELL));
     }
 
     @Test
@@ -125,9 +125,9 @@ public class OrderBookTest {
         orderBook.addOrder(new Order(100.0, 10.0, Side.BUY));
         orderBook.addOrder(new Order(100.0, 20.0, Side.BUY));
 
-        orderBook.addOrder(new Order(100.0, 30.0, Side.SELL));
-        orderBook.addOrder(new Order(100.0, 40.0, Side.SELL));
-        orderBook.addOrder(new Order(101.0, 50.0, Side.SELL));
+        orderBook.addOrder(new Order(101.0, 30.0, Side.SELL));
+        orderBook.addOrder(new Order(101.0, 40.0, Side.SELL));
+        orderBook.addOrder(new Order(102.0, 50.0, Side.SELL));
 
         assertEquals(150.0, orderBook.getTotalVolume());
     }
