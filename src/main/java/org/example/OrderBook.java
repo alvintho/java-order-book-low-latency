@@ -85,47 +85,56 @@ public class OrderBook {
         TreeMap<Double, Queue<Order>> oppositeBook = incomingOrder.isBid() ? asks : bids;
 
         if (oppositeBook.isEmpty()) return null;
-
         double incomingOrderPrice = incomingOrder.getPrice();
-        double bestOppositePrice = oppositeBook.firstKey();
+        double totalTradeQuantity = 0;
+        double tradePrice = 0; // TODO: revisit as currently using the last price
 
-        boolean isPriceMatch = incomingOrder.isBid()
-                ? incomingOrderPrice >= bestOppositePrice
-                : incomingOrderPrice <= bestOppositePrice;
+        while(!oppositeBook.isEmpty() && !incomingOrder.isFilled()) {
+            double bestOppositePrice = oppositeBook.firstKey();
 
-        if (!isPriceMatch) return null;
+            boolean isPriceMatch = incomingOrder.isBid()
+                    ? incomingOrderPrice >= bestOppositePrice
+                    : incomingOrderPrice <= bestOppositePrice;
 
-        boolean isOpposingOrdersEmpty = oppositeBook.firstEntry().getValue().isEmpty();
+            if (!isPriceMatch) return null;
 
-        if (isOpposingOrdersEmpty) {
-            oppositeBook.remove(bestOppositePrice);
-            return null;
+            boolean isOpposingOrdersEmpty = oppositeBook.firstEntry().getValue().isEmpty();
+
+            if (isOpposingOrdersEmpty) {
+                oppositeBook.remove(bestOppositePrice);
+                return null;
+            }
+
+            // Execute trade
+            Queue<Order> ordersAtBestPrice = oppositeBook.get(bestOppositePrice);
+            Order restingOrder = ordersAtBestPrice.peek();
+            if (restingOrder == null) return null;
+
+            double tradeQuantity = Math.min(incomingOrder.getQuantity(), restingOrder.getQuantity());
+
+            // Handle partial fills
+            incomingOrder.reduceQuantity(tradeQuantity);
+            restingOrder.reduceQuantity(tradeQuantity);
+
+            removeVolume(tradeQuantity, restingOrder.getSide()); // Always remove traded volume from resting side
+            removeVolume(tradeQuantity, incomingOrder.getSide());
+
+            // Handle full fills
+            if (restingOrder.isFilled()) {
+                this.removeOrderFromBook(restingOrder);
+            }
+
+            if (incomingOrder.isFilled()) {
+                this.removeOrderFromBook(incomingOrder);
+            }
+
+            tradePrice = bestOppositePrice;
+            totalTradeQuantity += tradeQuantity;
         }
 
-        // Execute trade
-        Queue<Order> ordersAtBestPrice = oppositeBook.get(bestOppositePrice);
-        Order restingOrder = ordersAtBestPrice.peek();
-        if (restingOrder == null) return null;
 
-        double tradeQuantity = Math.min(incomingOrder.getQuantity(), restingOrder.getQuantity());
 
-        // Handle partial fills
-        incomingOrder.reduceQuantity(tradeQuantity);
-        restingOrder.reduceQuantity(tradeQuantity);
-
-        removeVolume(tradeQuantity, restingOrder.getSide()); // Always remove traded volume from resting side
-        removeVolume(tradeQuantity, incomingOrder.getSide());
-
-        // Handle full fills
-        if (restingOrder.isFilled()) {
-            this.removeOrderFromBook(restingOrder);
-        }
-
-        if (incomingOrder.isFilled()) {
-            this.removeOrderFromBook(incomingOrder);
-        }
-
-        return new Trade(bestOppositePrice, tradeQuantity);
+        return new Trade(tradePrice, totalTradeQuantity);
     }
 
     public double getTotalBidVolume() {
