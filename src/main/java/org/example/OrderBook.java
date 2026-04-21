@@ -18,10 +18,10 @@ public class OrderBook {
 
     private void removeOrderFromBook(Order order) {
         /*
-        * 1. Get the book
-        * 2. Get the queue of orders at the price
-        * 3. Remove the order from the queue
-        * */
+         * 1. Get the book
+         * 2. Get the queue of orders at the price
+         * 3. Remove the order from the queue
+         * */
 
         TreeMap<Double, Queue<Order>> book = order.isBid() ? bids : asks;
         Queue<Order> ordersAtPrice = book.get(order.getPrice());
@@ -54,7 +54,7 @@ public class OrderBook {
         }
     }
 
-    public Trade addOrder(Order order) {
+    public List<Trade> addOrder(Order order) {
         if (order == null || order.getOrderId() == null) {
             throw new IllegalArgumentException("Order cannot be null");
         }
@@ -81,13 +81,11 @@ public class OrderBook {
         this.removeVolume(order.getQuantity(), order.getSide());
     }
 
-    private Trade matchOrder(Order incomingOrder) {
+    private List<Trade> matchOrder(Order incomingOrder) {
         TreeMap<Double, Queue<Order>> oppositeBook = incomingOrder.isBid() ? asks : bids;
+        List<Trade> trades = new ArrayList<>();
 
-        if (oppositeBook.isEmpty()) return null;
         double incomingOrderPrice = incomingOrder.getPrice();
-        double totalTradeQuantity = 0;
-        double tradePrice = 0; // TODO: revisit as currently using the last price
 
         while(!oppositeBook.isEmpty() && !incomingOrder.isFilled()) {
             double bestOppositePrice = oppositeBook.firstKey();
@@ -96,20 +94,16 @@ public class OrderBook {
                     ? incomingOrderPrice >= bestOppositePrice
                     : incomingOrderPrice <= bestOppositePrice;
 
-            if (!isPriceMatch) return null;
+            if (!isPriceMatch) break;
 
-            boolean isOpposingOrdersEmpty = oppositeBook.firstEntry().getValue().isEmpty();
+            Queue<Order> ordersAtBestPrice = oppositeBook.get(bestOppositePrice);
 
-            if (isOpposingOrdersEmpty) {
+            if (ordersAtBestPrice == null || ordersAtBestPrice.isEmpty()) {
                 oppositeBook.remove(bestOppositePrice);
-                return null;
+                continue;
             }
 
-            // Execute trade
-            Queue<Order> ordersAtBestPrice = oppositeBook.get(bestOppositePrice);
             Order restingOrder = ordersAtBestPrice.peek();
-            if (restingOrder == null) return null;
-
             double tradeQuantity = Math.min(incomingOrder.getQuantity(), restingOrder.getQuantity());
 
             // Handle partial fills
@@ -128,13 +122,12 @@ public class OrderBook {
                 this.removeOrderFromBook(incomingOrder);
             }
 
-            tradePrice = bestOppositePrice;
-            totalTradeQuantity += tradeQuantity;
+            trades.add(new Trade(bestOppositePrice, tradeQuantity));
         }
 
 
 
-        return new Trade(tradePrice, totalTradeQuantity);
+        return trades;
     }
 
     public double getTotalBidVolume() {
