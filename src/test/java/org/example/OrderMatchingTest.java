@@ -3,6 +3,8 @@ package org.example;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OrderMatchingTest {
@@ -32,11 +34,12 @@ public class OrderMatchingTest {
         Order sellOrder = new Order(100.0, 10.0, Side.SELL);
 
         orderBook.addOrder(buyOrder);
-        Trade trade = orderBook.addOrder(sellOrder);
+        List<Trade> trades = orderBook.addOrder(sellOrder);
 
-        assertNotNull(trade);
-        assertEquals(100.0, trade.getPrice());
-        assertEquals(10.0, trade.getQuantity());
+        assertNotNull(trades);
+        assertEquals(1, trades.size());
+        assertEquals(100.0, trades.getFirst().getPrice());
+        assertEquals(10.0, trades.getFirst().getQuantity());
         assertEquals(0, orderBook.getOrderCountAtPrice(100.0, Side.BUY));
         assertEquals(0, orderBook.getOrderCountAtPrice(100.0, Side.SELL));
 
@@ -55,11 +58,12 @@ public class OrderMatchingTest {
         Order sellOrder = new Order(100.0, 10.0, Side.SELL);
 
         orderBook.addOrder(sellOrder);
-        Trade trade = orderBook.addOrder(buyOrder);
+        List<Trade> trades = orderBook.addOrder(buyOrder);
 
-        assertNotNull(trade);
-        assertEquals(100.0, trade.getPrice());
-        assertEquals(10.0, trade.getQuantity());
+        assertNotNull(trades);
+        assertEquals(1, trades.size());
+        assertEquals(100.0, trades.getFirst().getPrice());
+        assertEquals(10.0, trades.getFirst().getQuantity());
 
         assertEquals(Double.NaN, orderBook.getBestBid());
         assertEquals(Double.NaN, orderBook.getBestAsk());
@@ -76,9 +80,9 @@ public class OrderMatchingTest {
         Order sellOrder = new Order(100.0, 10.0, Side.SELL);
 
         orderBook.addOrder(sellOrder);
-        Trade trade = orderBook.addOrder(buyOrder);
+        List<Trade> trades = orderBook.addOrder(buyOrder);
 
-        assertNull(trade);
+        assertEquals(0, trades.size());
         assertEquals(99.0, orderBook.getBestBid());
         assertEquals(100.0, orderBook.getBestAsk());
         assertEquals(20.0, orderBook.getTotalVolume());
@@ -90,11 +94,12 @@ public class OrderMatchingTest {
         Order sellOrder = new Order(100.0, 5.0, Side.SELL);
 
         orderBook.addOrder(buyOrder);
-        Trade trade = orderBook.addOrder(sellOrder);
+        List<Trade> trades = orderBook.addOrder(sellOrder);
 
-        assertNotNull(trade);
-        assertEquals(100.0, trade.getPrice());
-        assertEquals(5.0, trade.getQuantity());
+        assertNotNull(trades);
+        assertEquals(1, trades.size());
+        assertEquals(100.0, trades.getFirst().getPrice());
+        assertEquals(5.0, trades.getFirst().getQuantity());
 
         assertEquals(100.0, orderBook.getBestBid());
         assertEquals(Double.NaN, orderBook.getBestAsk());
@@ -110,11 +115,12 @@ public class OrderMatchingTest {
         Order sellOrder = new Order(100.0, 15.0, Side.SELL);
 
         orderBook.addOrder(buyOrder);
-        Trade trade = orderBook.addOrder(sellOrder);
+        List<Trade> trades = orderBook.addOrder(sellOrder);
 
-        assertNotNull(trade);
-        assertEquals(100.0, trade.getPrice());
-        assertEquals(10.0, trade.getQuantity());
+        assertNotNull(trades);
+        assertEquals(1, trades.size());
+        assertEquals(100.0, trades.getFirst().getPrice());
+        assertEquals(10.0, trades.getFirst().getQuantity());
 
         assertEquals(Double.NaN, orderBook.getBestBid());
         assertEquals(100.0, orderBook.getBestAsk());
@@ -132,10 +138,12 @@ public class OrderMatchingTest {
 
         orderBook.addOrder(firstBuy);
         orderBook.addOrder(secondBuy);
-        Trade trade = orderBook.addOrder(sellOrder);
+        List<Trade> trades = orderBook.addOrder(sellOrder);
 
-        assertNotNull(trade);
-        assertEquals(5.0, trade.getQuantity());
+        assertNotNull(trades);
+        assertEquals(1, trades.size());
+        assertEquals(100.0, trades.getFirst().getPrice());
+        assertEquals(5.0, trades.getFirst().getQuantity());
 
         // First buy should be filled and removed
         assertNull(orderBook.getOrder(firstBuy));
@@ -161,11 +169,23 @@ public class OrderMatchingTest {
 
         Order sellOrder = new Order(100.0, 10.0, Side.SELL);
 
-        Trade trade = orderBook.addOrder(sellOrder);
+        List<Trade> trades = orderBook.addOrder(sellOrder);
 
-        assertNotNull(trade);
-        assertEquals(100.0, trade.getPrice());
-        assertEquals(10.0, trade.getQuantity());
+        assertNotNull(trades);
+        assertEquals(3, trades.size());
+
+        // Verify each trade
+        Trade trade1 = trades.getFirst();
+        assertEquals(100.0, trade1.getPrice());
+        assertEquals(3.0, trade1.getQuantity());
+
+        Trade trade2 = trades.get(1);
+        assertEquals(100.0, trade2.getPrice());
+        assertEquals(4.0, trade2.getQuantity());
+
+        Trade trade3 = trades.get(2);
+        assertEquals(100.0, trade3.getPrice());
+        assertEquals(3.0, trade3.getQuantity());
 
         assertNull(orderBook.getOrder(firstBuy));
         assertNull(orderBook.getOrder(secondBuy));
@@ -178,6 +198,7 @@ public class OrderMatchingTest {
         assertEquals(0.0, orderBook.getTotalAskVolume());
         assertEquals(0.0, orderBook.getTotalVolume());
     }
+
     @Test
     void shouldMatchIncomingAskAcrossMultipleBidLevels() {
         orderBook.addOrder(new Order(100.0, 5.0, Side.BUY));
@@ -189,10 +210,23 @@ public class OrderMatchingTest {
         // - 5 at 99.0
         // - 2 at 98.0 (partial)
         Order sellOrder = new Order(98.0, 12.0, Side.SELL);
-        Trade trade = orderBook.addOrder(sellOrder);
+        List<Trade> trades = orderBook.addOrder(sellOrder);
 
-        assertNotNull(trade);
-        assertEquals(12.0, trade.getQuantity());
+        assertNotNull(trades);
+        assertEquals(3, trades.size());
+
+        // Verify each trade
+        Trade trade1 = trades.getFirst();
+        assertEquals(100.0, trade1.getPrice());
+        assertEquals(5.0, trade1.getQuantity());
+
+        Trade trade2 = trades.get(1);
+        assertEquals(99.0, trade2.getPrice());
+        assertEquals(5.0, trade2.getQuantity());
+
+        Trade trade3 = trades.get(2);
+        assertEquals(98.0, trade3.getPrice());
+        assertEquals(2.0, trade3.getQuantity());
 
         // Only 3 remaining from the 98.0 buy order
         assertEquals(98.0, orderBook.getBestBid());
@@ -218,10 +252,24 @@ public class OrderMatchingTest {
         // - 5 at 101.0
         // - 2 at 102.0 (partial)
         Order buyOrder = new Order(102.0, 12.0, Side.BUY);
-        Trade trade = orderBook.addOrder(buyOrder);
+        List<Trade> trades = orderBook.addOrder(buyOrder);
 
-        assertNotNull(trade);
-        assertEquals(12.0, trade.getQuantity());
+        assertNotNull(trades);
+        assertEquals(3, trades.size());
+
+        // Verify each trade
+        Trade trade1 = trades.getFirst();
+        assertEquals(100.0, trade1.getPrice());
+        assertEquals(5.0, trade1.getQuantity());
+
+        Trade trade2 = trades.get(1);
+        assertEquals(101.0, trade2.getPrice());
+        assertEquals(5.0, trade2.getQuantity());
+
+        Trade trade3 = trades.get(2);
+        assertEquals(102.0, trade3.getPrice());
+        assertEquals(2.0, trade3.getQuantity());
+
 
         assertEquals(Double.NaN, orderBook.getBestBid());
         assertEquals(102.0, orderBook.getBestAsk());
