@@ -130,4 +130,18 @@ public class OrderBookTest {
 
         assertEquals(150.0, orderBook.getTotalVolume());
     }
+
+    @Test
+    void shouldNotAddDuplicateOrder() {
+        Order order = new Order(100.0, 10.0, Side.BUY);
+
+        orderBook.addOrder(order);
+
+        assertThrows(IllegalStateException.class, () -> orderBook.addOrder(order));
+
+        // Verify state unchanged
+        assertEquals(1, orderBook.getOrderCountAtPrice(100.0, Side.BUY));
+        assertEquals(10.0, orderBook.getTotalBidVolume());
+        assertEquals(10.0, orderBook.getTotalVolume());
+    }
 }
