@@ -146,10 +146,10 @@ public class OrderMatchingTest {
         assertEquals(5.0, trades.getFirst().getQuantity());
 
         // First buy should be filled and removed
-        assertNull(orderBook.getOrder(firstBuy));
+        assertNull(orderBook.getOrder(firstBuy.getOrderId()));
 
         // Second buy should still be resting
-        assertNotNull(orderBook.getOrder(secondBuy));
+        assertNotNull(orderBook.getOrder(secondBuy.getOrderId()));
         assertEquals(1, orderBook.getOrderCountAtPrice(100.0, Side.BUY));
 
         assertEquals(5.0, orderBook.getTotalBidVolume());
@@ -187,9 +187,9 @@ public class OrderMatchingTest {
         assertEquals(100.0, trade3.getPrice());
         assertEquals(3.0, trade3.getQuantity());
 
-        assertNull(orderBook.getOrder(firstBuy));
-        assertNull(orderBook.getOrder(secondBuy));
-        assertNull(orderBook.getOrder(thirdBuy));
+        assertNull(orderBook.getOrder(firstBuy.getOrderId()));
+        assertNull(orderBook.getOrder(secondBuy.getOrderId()));
+        assertNull(orderBook.getOrder(thirdBuy.getOrderId()));
 
         assertEquals(Double.NaN, orderBook.getBestBid());
         assertEquals(Double.NaN, orderBook.getBestAsk());
