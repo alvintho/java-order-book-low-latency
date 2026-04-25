@@ -68,13 +68,15 @@ public class OrderBook {
         return this.matchOrder(order);
     }
 
-    public void removeOrder(Order order) {
-        if (order == null) {
-            throw new IllegalArgumentException("Order cannot be null");
+    public void removeOrder(UUID orderId) {
+        if (orderId == null) {
+            throw new IllegalArgumentException("Order ID cannot be null");
         }
 
-        if (!orderMap.containsKey(order.getOrderId())) {
-            throw new IllegalStateException("Order " + order.getOrderId() + " not found");
+        Order order = this.orderMap.get(orderId);
+
+        if (order == null) {
+            throw new IllegalStateException("Order " + orderId + " not found");
         }
 
         this.removeOrderFromBook(order);
@@ -158,8 +160,8 @@ public class OrderBook {
         return orders.size();
     }
 
-    public Order getOrder(Order order) {
-        return this.orderMap.get(order.getOrderId());
+    public Order getOrder(UUID orderId) {
+        return this.orderMap.get(orderId);
     }
 
     public double getTotalVolume() {

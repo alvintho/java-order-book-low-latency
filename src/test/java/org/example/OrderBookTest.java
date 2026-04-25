@@ -44,7 +44,7 @@ public class OrderBookTest {
         Order order = new Order(100.0, 10.0, Side.BUY);
 
         orderBook.addOrder(order);
-        Order retrievedOrder = orderBook.getOrder(order);
+        Order retrievedOrder = orderBook.getOrder(order.getOrderId());
         assertEquals(order.getOrderId(), retrievedOrder.getOrderId());
     }
 
@@ -52,8 +52,7 @@ public class OrderBookTest {
     void shouldNotGetNonExistingOrderFromOrderMap() {
         Order order = new Order(100.0, 10.0, Side.BUY);
 
-        assertEquals(null, orderBook.getOrder(order));
-        assertThrows(NullPointerException.class, () -> orderBook.getOrder(null));
+        assertNull(orderBook.getOrder(order.getOrderId()));
     }
 
     @Test
@@ -64,8 +63,8 @@ public class OrderBookTest {
         orderBook.addOrder(order);
         orderBook.addOrder(order2);
 
-        orderBook.removeOrder(order);
-        orderBook.removeOrder(order2);
+        orderBook.removeOrder(order.getOrderId());
+        orderBook.removeOrder(order2.getOrderId());
 
         assertEquals(Double.NaN, orderBook.getBestBid());
         assertEquals(Double.NaN, orderBook.getBestAsk());
@@ -82,7 +81,7 @@ public class OrderBookTest {
     void shouldNotRemoveNonExistingOrder() {
         Order order = new Order(100.0, 10.0, Side.BUY);
 
-        assertThrows(IllegalStateException.class, () -> orderBook.removeOrder(order));
+        assertThrows(IllegalStateException.class, () -> orderBook.removeOrder(order.getOrderId()));
         assertThrows(IllegalArgumentException.class, () -> orderBook.removeOrder(null));
     }
 
