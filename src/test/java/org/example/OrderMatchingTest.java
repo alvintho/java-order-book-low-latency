@@ -283,4 +283,19 @@ public class OrderMatchingTest {
         assertEquals(3.0, orderBook.getTotalVolume());
     }
 
+    @Test
+    void shouldLinkTradeToParticipatingOrders() {
+        Order buyOrder = new Order(100.0, 10.0, Side.BUY);
+        Order sellOrder = new Order(100.0, 10.0, Side.SELL);
+
+        orderBook.addOrder(buyOrder);
+        List<Trade> trades = orderBook.addOrder(sellOrder);
+
+        assertEquals(1, trades.size());
+        Trade trade = trades.getFirst();
+
+        assertEquals(buyOrder.getOrderId(), trade.getBuyOrderId());
+        assertEquals(sellOrder.getOrderId(), trade.getSellOrderId());
+    }
+
 }

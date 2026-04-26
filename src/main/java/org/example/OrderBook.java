@@ -59,8 +59,11 @@ public class OrderBook {
             throw new IllegalArgumentException("Order cannot be null");
         }
 
-        TreeMap<Double, Queue<Order>> book = order.isBid() ? bids : asks;
+        if (orderMap.containsKey(order.getOrderId())) {
+            throw new IllegalStateException("Order " + order.getOrderId() + " already exists");
+        }
 
+        TreeMap<Double, Queue<Order>> book = order.isBid() ? bids : asks;
         book.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
         this.orderMap.put(order.getOrderId(), order);
         this.addVolume(order.getQuantity(), order.getSide());
@@ -124,7 +127,10 @@ public class OrderBook {
                 this.removeOrderFromBook(incomingOrder);
             }
 
-            trades.add(new Trade(bestOppositePrice, tradeQuantity));
+            UUID buyOrderId = incomingOrder.isBid() ? incomingOrder.getOrderId() : restingOrder.getOrderId();
+            UUID sellOrderId = incomingOrder.isBid() ? restingOrder.getOrderId() : incomingOrder.getOrderId();
+
+            trades.add(new Trade(bestOppositePrice, tradeQuantity, buyOrderId, sellOrderId));
         }
 
 
