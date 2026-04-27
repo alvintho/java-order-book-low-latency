@@ -71,7 +71,7 @@ public class OrderBook {
         return this.matchOrder(order);
     }
 
-    public void removeOrder(UUID orderId) {
+    public void cancelOrder (UUID orderId) {
         if (orderId == null) {
             throw new IllegalArgumentException("Order ID cannot be null");
         }
@@ -136,6 +136,24 @@ public class OrderBook {
 
 
         return trades;
+    }
+
+    public List<Trade> modifyOrder(UUID orderId, Order modifiedOrder) {
+        if (modifiedOrder == null || modifiedOrder.getOrderId() == null) {
+            throw new IllegalArgumentException("Order cannot be null");
+        }
+
+        Order existingOrder = this.orderMap.get(orderId);
+        if (existingOrder == null) {
+            throw new IllegalStateException("Order " + orderId + " not found");
+        }
+
+        if (existingOrder.getSide() != modifiedOrder.getSide()) {
+            throw new IllegalArgumentException("Cannot modify order of different side");
+        }
+
+        this.cancelOrder(existingOrder.getOrderId());
+        return this.addOrder(modifiedOrder);
     }
 
     public double getTotalBidVolume() {
