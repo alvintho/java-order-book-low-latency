@@ -226,4 +226,18 @@ public class OrderBookTest {
         assertEquals(Double.NaN, orderBook.getBestAsk());
         assertEquals(0, orderBook.getTotalVolume());
     }
+
+    @Test
+    void shouldGetVolumeAtPriceLevel() {
+        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY));
+        orderBook.addOrder(new Order(100.0, 20.0, Side.BUY));
+        orderBook.addOrder(new Order(100.0, 15.0, Side.BUY));
+
+        orderBook.addOrder(new Order(101.0, 5.0, Side.SELL));
+        orderBook.addOrder(new Order(101.0, 8.0, Side.SELL));
+
+        assertEquals(45.0, orderBook.getVolumeAtPrice(100.0, Side.BUY));
+        assertEquals(13.0, orderBook.getVolumeAtPrice(101.0, Side.SELL));
+        assertEquals(0.0, orderBook.getVolumeAtPrice(99.0, Side.BUY));
+    }
 }
