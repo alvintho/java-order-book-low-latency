@@ -191,4 +191,15 @@ public class OrderBook {
     public double getTotalVolume() {
         return this.totalVolume;
     }
+
+    public double getVolumeAtPrice(double price, Side side) {
+        TreeMap<Double, Queue<Order>> book = side == Side.BUY ? bids : asks;
+        Queue<Order> orders = book.get(price);
+
+        if (orders == null) {
+            return 0;
+        }
+
+        return orders.parallelStream().mapToDouble(Order::getQuantity).sum();
+    }
 }
