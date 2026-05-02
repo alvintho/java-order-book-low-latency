@@ -217,7 +217,7 @@ public class OrderBook {
         return bestAsk - bestBid;
     }
 
-    public double getDepth(Side side) {
+    public int getDepth(Side side) {
         TreeMap<Double, Queue<Order>> book = side == Side.BUY ? this.bids : this.asks;
 
         return book.size();
