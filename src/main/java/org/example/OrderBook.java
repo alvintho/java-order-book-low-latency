@@ -6,6 +6,7 @@ public class OrderBook {
     private double totalVolume; // sum of all Bids + Sum of all Asks
     private double totalBidVolume;
     private double totalAskVolume;
+    private int tradeCount;
     private final TreeMap<Double, Queue<Order>> bids = new TreeMap<>(Collections.reverseOrder()); // Buy to the lowest asker
     private final TreeMap<Double, Queue<Order>> asks = new TreeMap<>(); // Sell to the highest bidder
     private final Map<UUID, Order> orderMap = new HashMap<>();
@@ -14,6 +15,7 @@ public class OrderBook {
         this.totalVolume = 0;
         this.totalBidVolume = 0;
         this.totalAskVolume = 0;
+        this.tradeCount = 0;
     }
 
     private void removeOrderFromBook(Order order) {
@@ -131,6 +133,7 @@ public class OrderBook {
             UUID sellOrderId = incomingOrder.isBid() ? restingOrder.getOrderId() : incomingOrder.getOrderId();
 
             trades.add(new Trade(bestOppositePrice, tradeQuantity, buyOrderId, sellOrderId));
+            this.tradeCount += 1;
         }
 
 
@@ -201,5 +204,26 @@ public class OrderBook {
         }
 
         return orders.parallelStream().mapToDouble(Order::getQuantity).sum();
+    }
+
+    public double getSpread() {
+        double bestBid = this.getBestBid();
+        double bestAsk = this.getBestAsk();
+
+        if (Double.isNaN(bestBid) || Double.isNaN(bestAsk)) {
+            return Double.NaN;
+        }
+
+        return bestAsk - bestBid;
+    }
+
+    public double getDepth(Side side) {
+        TreeMap<Double, Queue<Order>> book = side == Side.BUY ? this.bids : this.asks;
+
+        return book.size();
+    }
+
+    public int getTradeCounts() {
+        return this.tradeCount;
     }
 }

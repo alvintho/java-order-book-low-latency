@@ -240,4 +240,97 @@ public class OrderBookTest {
         assertEquals(13.0, orderBook.getVolumeAtPrice(101.0, Side.SELL));
         assertEquals(0.0, orderBook.getVolumeAtPrice(99.0, Side.BUY));
     }
+
+    @Test
+    void shouldCalculateSpread() {
+        orderBook.addOrder(new Order(99.0, 10.0, Side.BUY));
+        orderBook.addOrder(new Order(101.0, 10.0, Side.SELL));
+
+        assertEquals(2.0, orderBook.getSpread());
+    }
+
+    @Test
+    void shouldReturnNaNSpreadWhenOneSideEmpty() {
+        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY));
+
+        assertEquals(Double.NaN, orderBook.getSpread());
+    }
+
+    @Test
+    void shouldReturnNaNSpreadWhenBookEmpty() {
+        assertEquals(Double.NaN, orderBook.getSpread());
+    }
+
+    @Test
+    void shouldUpdateSpreadAfterCancel() {
+        Order bid1 = new Order(100.0, 10.0, Side.BUY);
+        Order bid2 = new Order(99.0, 10.0, Side.BUY);
+        Order ask = new Order(101.0, 10.0, Side.SELL);
+
+        orderBook.addOrder(bid1);
+        orderBook.addOrder(bid2);
+        orderBook.addOrder(ask);
+
+        assertEquals(1.0, orderBook.getSpread());
+
+        orderBook.cancelOrder(bid1.getOrderId());
+
+        assertEquals(2.0, orderBook.getSpread());
+    }
+
+    @Test
+    void shouldGetBookDepth() {
+        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY));
+        orderBook.addOrder(new Order(100.0, 5.0, Side.BUY));  // same level
+        orderBook.addOrder(new Order(99.0, 10.0, Side.BUY));
+        orderBook.addOrder(new Order(98.0, 10.0, Side.BUY));
+
+        orderBook.addOrder(new Order(101.0, 10.0, Side.SELL));
+        orderBook.addOrder(new Order(102.0, 10.0, Side.SELL));
+
+        assertEquals(3, orderBook.getDepth(Side.BUY));
+        assertEquals(2, orderBook.getDepth(Side.SELL));
+    }
+
+    @Test
+    void shouldReturnZeroDepthWhenSideEmpty() {
+        assertEquals(0, orderBook.getDepth(Side.BUY));
+        assertEquals(0, orderBook.getDepth(Side.SELL));
+    }
+
+    @Test
+    void shouldUpdateDepthAfterCancel() {
+        Order order1 = new Order(100.0, 10.0, Side.BUY);
+        Order order2 = new Order(99.0, 10.0, Side.BUY);
+
+        orderBook.addOrder(order1);
+        orderBook.addOrder(order2);
+
+        assertEquals(2, orderBook.getDepth(Side.BUY));
+
+        orderBook.cancelOrder(order1.getOrderId());
+
+        assertEquals(1, orderBook.getDepth(Side.BUY));
+    }
+
+    @Test
+    void shouldTrackTotalTradeCount() {
+        Order order1 = new Order(100.0, 10.0, Side.BUY);
+        Order order2 = new Order(100.0, 5.0, Side.SELL);
+        Order order3 = new Order(100.0, 5.0, Side.SELL);
+        orderBook.addOrder(order1);
+        orderBook.addOrder(order2);
+        orderBook.addOrder(order3);
+
+        assertEquals(2, orderBook.getTradeCounts());
+    }
+
+    @Test
+    void shouldTrackZeroTradesWhenNoMatches() {
+        orderBook.addOrder(new Order(99.0, 10.0, Side.BUY));
+        orderBook.addOrder(new Order(101.0, 10.0, Side.SELL));
+
+        assertEquals(0, orderBook.getTradeCounts());
+    }
+
 }
