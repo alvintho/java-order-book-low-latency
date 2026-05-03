@@ -243,25 +243,4 @@ public class OrderBook {
     public int getTradeCounts() {
         return this.tradeCount;
     }
-
-    public double getSpread() {
-        double bestBid = this.getBestBid();
-        double bestAsk = this.getBestAsk();
-
-        if (Double.isNaN(bestBid) || Double.isNaN(bestAsk)) {
-            return Double.NaN;
-        }
-
-        return bestAsk - bestBid;
-    }
-
-    public double getDepth(Side side) {
-        TreeMap<Double, Queue<Order>> book = side == Side.BUY ? this.bids : this.asks;
-
-        return book.size();
-    }
-
-    public int getTradeCounts() {
-        return this.tradeCount;
-    }
 }
