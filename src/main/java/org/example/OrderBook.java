@@ -27,6 +27,57 @@ public class OrderBook {
         return instrument;
     }
 
+    public List<Trade> addOrder(Order order) {
+        if (order == null || order.getOrderId() == null) {
+            throw new IllegalArgumentException("Order cannot be null");
+        }
+
+        if (orderMap.containsKey(order.getOrderId())) {
+            throw new IllegalStateException("Order " + order.getOrderId() + " already exists");
+        }
+
+        TreeMap<Long, Queue<Order>> book = order.isBid() ? bids : asks;
+        book.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
+        this.orderMap.put(order.getOrderId(), order);
+        this.addVolume(order.getQuantity(), order.getSide());
+
+        return this.matchOrder(order);
+    }
+
+
+    public void cancelOrder (UUID orderId) {
+        if (orderId == null) {
+            throw new IllegalArgumentException("Order ID cannot be null");
+        }
+
+        Order order = this.orderMap.get(orderId);
+
+        if (order == null) {
+            throw new IllegalStateException("Order " + orderId + " not found");
+        }
+
+        this.removeOrderFromBook(order);
+        this.removeVolume(order.getQuantity(), order.getSide());
+    }
+
+    public List<Trade> modifyOrder(UUID orderId, Order modifiedOrder) {
+        if (modifiedOrder == null || modifiedOrder.getOrderId() == null) {
+            throw new IllegalArgumentException("Order cannot be null");
+        }
+
+        Order existingOrder = this.orderMap.get(orderId);
+        if (existingOrder == null) {
+            throw new IllegalStateException("Order " + orderId + " not found");
+        }
+
+        if (existingOrder.getSide() != modifiedOrder.getSide()) {
+            throw new IllegalArgumentException("Cannot modify order of different side");
+        }
+
+        this.cancelOrder(existingOrder.getOrderId());
+        return this.addOrder(modifiedOrder);
+    }
+
     private void removeOrderFromBook(Order order) {
         /*
          * 1. Get the book
@@ -63,38 +114,6 @@ public class OrderBook {
         } else {
             this.totalAskVolume -= quantity;
         }
-    }
-
-    public List<Trade> addOrder(Order order) {
-        if (order == null || order.getOrderId() == null) {
-            throw new IllegalArgumentException("Order cannot be null");
-        }
-
-        if (orderMap.containsKey(order.getOrderId())) {
-            throw new IllegalStateException("Order " + order.getOrderId() + " already exists");
-        }
-
-        TreeMap<Long, Queue<Order>> book = order.isBid() ? bids : asks;
-        book.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
-        this.orderMap.put(order.getOrderId(), order);
-        this.addVolume(order.getQuantity(), order.getSide());
-
-        return this.matchOrder(order);
-    }
-
-    public void cancelOrder (UUID orderId) {
-        if (orderId == null) {
-            throw new IllegalArgumentException("Order ID cannot be null");
-        }
-
-        Order order = this.orderMap.get(orderId);
-
-        if (order == null) {
-            throw new IllegalStateException("Order " + orderId + " not found");
-        }
-
-        this.removeOrderFromBook(order);
-        this.removeVolume(order.getQuantity(), order.getSide());
     }
 
     private List<Trade> matchOrder(Order incomingOrder) {
@@ -153,24 +172,6 @@ public class OrderBook {
 
 
         return trades;
-    }
-
-    public List<Trade> modifyOrder(UUID orderId, Order modifiedOrder) {
-        if (modifiedOrder == null || modifiedOrder.getOrderId() == null) {
-            throw new IllegalArgumentException("Order cannot be null");
-        }
-
-        Order existingOrder = this.orderMap.get(orderId);
-        if (existingOrder == null) {
-            throw new IllegalStateException("Order " + orderId + " not found");
-        }
-
-        if (existingOrder.getSide() != modifiedOrder.getSide()) {
-            throw new IllegalArgumentException("Cannot modify order of different side");
-        }
-
-        this.cancelOrder(existingOrder.getOrderId());
-        return this.addOrder(modifiedOrder);
     }
 
     public double getTotalBidVolume() {
