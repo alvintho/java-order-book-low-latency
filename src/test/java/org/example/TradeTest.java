@@ -15,7 +15,7 @@ public class TradeTest {
         UUID buyOrderId = UUID.randomUUID();
         UUID sellOrderId = UUID.randomUUID();
 
-        Trade trade = new Trade(100.0, 2, buyOrderId, sellOrderId);
+        Trade trade = new Trade(10000L, 2, buyOrderId, sellOrderId);
 
         assertNotNull(trade.getTradeId());
         assertDoesNotThrow(() -> UUID.fromString(trade.getTradeId().toString()));
@@ -25,9 +25,9 @@ public class TradeTest {
     void shouldReturnTradeAttributes() {
         UUID buyOrderId = UUID.randomUUID();
         UUID sellOrderId = UUID.randomUUID();
-        Trade trade = new Trade(100.0, 2, buyOrderId, sellOrderId);
+        Trade trade = new Trade(10000L, 2, buyOrderId, sellOrderId);
 
-        assertEquals(100.0, trade.getPrice());
+        assertEquals(10000L, trade.getPrice());
         assertEquals(2, trade.getQuantity());
     }
 
@@ -35,8 +35,8 @@ public class TradeTest {
     void shouldCreateValidTimestamps() {
         long beforeTradeCreationTime = System.nanoTime();
 
-        Trade trade1 = new Trade(100.0, 2, UUID.randomUUID(), UUID.randomUUID());
-        Trade trade2 = new Trade(100.0, 2, UUID.randomUUID(), UUID.randomUUID());
+        Trade trade1 = new Trade(10000L, 2, UUID.randomUUID(), UUID.randomUUID());
+        Trade trade2 = new Trade(10000L, 2, UUID.randomUUID(), UUID.randomUUID());
 
         assertTrue(trade1.getTimestamp() > 0);
         assertTrue(trade1.getTimestamp() > beforeTradeCreationTime);

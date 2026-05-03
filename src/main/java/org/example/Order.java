@@ -3,24 +3,19 @@ package org.example;
 import java.util.UUID;
 
 public class Order {
-    private final UUID orderId;;
-    private final double price;
-    private double quantity; // partial fills are allowed
+    private final UUID orderId;
+    private final long price;
+    private double quantity;
     private final long timestamp;
     private final Side side;
 
-    public Order(double price, double quantity, Side side) {
-        this.orderId = UUID.randomUUID();
-
-        if (price <= 0.0) {
-            throw new IllegalArgumentException("Price must be positive: " + price);
-        }
-
+    public Order(double price, double quantity, Side side, int scale) {
         if (quantity <= 0.0) {
-            throw new IllegalArgumentException("Quantity must be positive: " + price);
+            throw new IllegalArgumentException("Quantity must be positive: " + quantity);
         }
 
-        this.price = price;
+        this.orderId = UUID.randomUUID();
+        this.price = Price.toLong(price, scale);
         this.quantity = quantity;
         this.side = side;
         this.timestamp = System.nanoTime();
@@ -30,20 +25,20 @@ public class Order {
         return orderId;
     }
 
-    public double getPrice() {
-        return price;
+    public long getPrice() {
+        return this.price;
     }
 
     public double getQuantity() {
-        return quantity;
+        return this.quantity;
     }
 
     public long getTimestamp() {
-        return timestamp;
+        return this.timestamp;
     }
 
     public Side getSide() {
-        return side;
+        return this.side;
     }
 
     public boolean isBid() {

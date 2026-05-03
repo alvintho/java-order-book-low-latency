@@ -10,7 +10,7 @@ public class OrderTest {
 
     @Test
     void shouldReturnOrderWithId() {
-        Order order = new Order(20, 1, Side.BUY);
+        Order order = new Order(20.0, 1, Side.BUY, 100);
 
         assertNotNull(order.getOrderId());
         assertDoesNotThrow(() -> UUID.fromString(order.getOrderId().toString()));
@@ -18,9 +18,9 @@ public class OrderTest {
 
     @Test
     void shouldReturnOrderAttributes() {
-        Order order = new Order(100.0, 2, Side.BUY);
+        Order order = new Order(100.0, 2, Side.BUY, 100);
 
-        assertEquals(100.0, order.getPrice());
+        assertEquals(10000L, order.getPrice());
         assertEquals(2, order.getQuantity());
         assertEquals(Side.BUY, order.getSide());
         assertTrue(order.isBid());
@@ -30,8 +30,8 @@ public class OrderTest {
     void shouldCreateValidTimestamps() {
         long beforeOrderCreationTime = System.nanoTime();
 
-        Order order1 = new Order(100.0, 2, Side.BUY);
-        Order order2 = new Order(100.0, 2, Side.SELL);
+        Order order1 = new Order(100.0, 2, Side.BUY, 100);
+        Order order2 = new Order(100.0, 2, Side.SELL, 100);
 
         assertTrue(order1.getTimestamp() > 0);
         assertTrue(order1.getTimestamp() > beforeOrderCreationTime);
@@ -40,11 +40,16 @@ public class OrderTest {
 
     @Test
     void shouldThrowExceptionForNegativeQuantity() {
-        assertThrows(IllegalArgumentException.class, () -> new Order(100.0, -1, Side.BUY));
+        assertThrows(IllegalArgumentException.class, () -> new Order(100.0, -1, Side.BUY, 100));
     }
 
     @Test
     void shouldThrowExceptionForNegativePrice() {
-        assertThrows(IllegalArgumentException.class, () -> new Order(-100.0, 1, Side.BUY));
+        assertThrows(IllegalArgumentException.class, () -> new Order(-100.0, 1, Side.BUY, 100));
+    }
+
+    @Test
+    void shouldRejectPriceBeyondScale() {
+        assertThrows(IllegalArgumentException.class, () -> new Order(100.001, 1, Side.BUY, 100));
     }
 }

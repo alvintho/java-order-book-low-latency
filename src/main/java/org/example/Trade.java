@@ -6,11 +6,11 @@ public class Trade {
     private final UUID tradeId;
     private final UUID buyOrderId;
     private final UUID sellOrderId;
-    private final double price;
+    private final long price;
     private final double quantity;
     private final long timestamp;
 
-    public Trade(double price, double quantity, UUID buyOrderId, UUID sellOrderId) {
+    public Trade(long price, double quantity, UUID buyOrderId, UUID sellOrderId) {
         this.tradeId = UUID.randomUUID();
         this.buyOrderId = buyOrderId;
         this.sellOrderId = sellOrderId;
