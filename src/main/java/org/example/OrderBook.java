@@ -3,19 +3,79 @@ package org.example;
 import java.util.*;
 
 public class OrderBook {
+    private final Instrument instrument;
     private double totalVolume; // sum of all Bids + Sum of all Asks
     private double totalBidVolume;
     private double totalAskVolume;
     private int tradeCount;
-    private final TreeMap<Double, Queue<Order>> bids = new TreeMap<>(Collections.reverseOrder()); // Buy to the lowest asker
-    private final TreeMap<Double, Queue<Order>> asks = new TreeMap<>(); // Sell to the highest bidder
+    private final TreeMap<Long, Queue<Order>> bids = new TreeMap<>(Collections.reverseOrder()); // Buy to the lowest ask-er
+    private final TreeMap<Long, Queue<Order>> asks = new TreeMap<>(); // Sell to the highest bidder
     private final Map<UUID, Order> orderMap = new HashMap<>();
 
-    public OrderBook() {
+    public OrderBook(Instrument instrument) {
+        if (instrument == null) {
+            throw new IllegalArgumentException("Instrument cannot be null");
+        }
+        this.instrument = instrument;
         this.totalVolume = 0;
         this.totalBidVolume = 0;
         this.totalAskVolume = 0;
         this.tradeCount = 0;
+    }
+
+    public Instrument getInstrument() {
+        return instrument;
+    }
+
+    public List<Trade> addOrder(Order order) {
+        if (order == null || order.getOrderId() == null) {
+            throw new IllegalArgumentException("Order cannot be null");
+        }
+
+        if (orderMap.containsKey(order.getOrderId())) {
+            throw new IllegalStateException("Order " + order.getOrderId() + " already exists");
+        }
+
+        TreeMap<Long, Queue<Order>> book = order.isBid() ? bids : asks;
+        book.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
+        this.orderMap.put(order.getOrderId(), order);
+        this.addVolume(order.getQuantity(), order.getSide());
+
+        return this.matchOrder(order);
+    }
+
+
+    public void cancelOrder (UUID orderId) {
+        if (orderId == null) {
+            throw new IllegalArgumentException("Order ID cannot be null");
+        }
+
+        Order order = this.orderMap.get(orderId);
+
+        if (order == null) {
+            throw new IllegalStateException("Order " + orderId + " not found");
+        }
+
+        this.removeOrderFromBook(order);
+        this.removeVolume(order.getQuantity(), order.getSide());
+    }
+
+    public List<Trade> modifyOrder(UUID orderId, Order modifiedOrder) {
+        if (modifiedOrder == null || modifiedOrder.getOrderId() == null) {
+            throw new IllegalArgumentException("Order cannot be null");
+        }
+
+        Order existingOrder = this.orderMap.get(orderId);
+        if (existingOrder == null) {
+            throw new IllegalStateException("Order " + orderId + " not found");
+        }
+
+        if (existingOrder.getSide() != modifiedOrder.getSide()) {
+            throw new IllegalArgumentException("Cannot modify order of different side");
+        }
+
+        this.cancelOrder(existingOrder.getOrderId());
+        return this.addOrder(modifiedOrder);
     }
 
     private void removeOrderFromBook(Order order) {
@@ -25,7 +85,7 @@ public class OrderBook {
          * 3. Remove the order from the queue
          * */
 
-        TreeMap<Double, Queue<Order>> book = order.isBid() ? bids : asks;
+        TreeMap<Long, Queue<Order>> book = order.isBid() ? bids : asks;
         Queue<Order> ordersAtPrice = book.get(order.getPrice());
 
         if (ordersAtPrice != null) {
@@ -56,46 +116,14 @@ public class OrderBook {
         }
     }
 
-    public List<Trade> addOrder(Order order) {
-        if (order == null || order.getOrderId() == null) {
-            throw new IllegalArgumentException("Order cannot be null");
-        }
-
-        if (orderMap.containsKey(order.getOrderId())) {
-            throw new IllegalStateException("Order " + order.getOrderId() + " already exists");
-        }
-
-        TreeMap<Double, Queue<Order>> book = order.isBid() ? bids : asks;
-        book.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
-        this.orderMap.put(order.getOrderId(), order);
-        this.addVolume(order.getQuantity(), order.getSide());
-
-        return this.matchOrder(order);
-    }
-
-    public void cancelOrder (UUID orderId) {
-        if (orderId == null) {
-            throw new IllegalArgumentException("Order ID cannot be null");
-        }
-
-        Order order = this.orderMap.get(orderId);
-
-        if (order == null) {
-            throw new IllegalStateException("Order " + orderId + " not found");
-        }
-
-        this.removeOrderFromBook(order);
-        this.removeVolume(order.getQuantity(), order.getSide());
-    }
-
     private List<Trade> matchOrder(Order incomingOrder) {
-        TreeMap<Double, Queue<Order>> oppositeBook = incomingOrder.isBid() ? asks : bids;
+        TreeMap<Long, Queue<Order>> oppositeBook = incomingOrder.isBid() ? asks : bids;
         List<Trade> trades = new ArrayList<>();
 
         double incomingOrderPrice = incomingOrder.getPrice();
 
         while(!oppositeBook.isEmpty() && !incomingOrder.isFilled()) {
-            double bestOppositePrice = oppositeBook.firstKey();
+            Long bestOppositePrice = oppositeBook.firstKey();
 
             boolean isPriceMatch = incomingOrder.isBid()
                     ? incomingOrderPrice >= bestOppositePrice
@@ -120,7 +148,7 @@ public class OrderBook {
             removeVolume(tradeQuantity, restingOrder.getSide()); // Always remove traded volume from resting side
             removeVolume(tradeQuantity, incomingOrder.getSide());
 
-            // Handle full fills
+            // Handle full-fills
             if (restingOrder.isFilled()) {
                 this.removeOrderFromBook(restingOrder);
             }
@@ -132,31 +160,18 @@ public class OrderBook {
             UUID buyOrderId = incomingOrder.isBid() ? incomingOrder.getOrderId() : restingOrder.getOrderId();
             UUID sellOrderId = incomingOrder.isBid() ? restingOrder.getOrderId() : incomingOrder.getOrderId();
 
-            trades.add(new Trade(bestOppositePrice, tradeQuantity, buyOrderId, sellOrderId));
+            trades.add(new Trade(
+                    bestOppositePrice,
+                    tradeQuantity,
+                    buyOrderId,
+                    sellOrderId
+            ));
             this.tradeCount += 1;
         }
 
 
 
         return trades;
-    }
-
-    public List<Trade> modifyOrder(UUID orderId, Order modifiedOrder) {
-        if (modifiedOrder == null || modifiedOrder.getOrderId() == null) {
-            throw new IllegalArgumentException("Order cannot be null");
-        }
-
-        Order existingOrder = this.orderMap.get(orderId);
-        if (existingOrder == null) {
-            throw new IllegalStateException("Order " + orderId + " not found");
-        }
-
-        if (existingOrder.getSide() != modifiedOrder.getSide()) {
-            throw new IllegalArgumentException("Cannot modify order of different side");
-        }
-
-        this.cancelOrder(existingOrder.getOrderId());
-        return this.addOrder(modifiedOrder);
     }
 
     public double getTotalBidVolume() {
@@ -168,23 +183,36 @@ public class OrderBook {
     }
 
     public double getBestBid() {
-        return bids.isEmpty() ? Double.NaN : bids.firstKey();
+        return bids.isEmpty()
+                ? Double.NaN
+                : Price.toDouble(bids.firstKey(), instrument.getScale());
     }
 
     public double getBestAsk() {
-        return asks.isEmpty() ? Double.NaN : asks.firstKey();
+        return asks.isEmpty()
+                ? Double.NaN
+                : Price.toDouble(asks.firstKey(), instrument.getScale());
+    }
+
+    private Queue<Order> getOrdersAtPrice(double price, Side side) {
+        TreeMap<Long, Queue<Order>> book = side == Side.BUY ? bids : asks;
+        long scaledPrice = Price.toLong(price, instrument.getScale());
+        return book.get(scaledPrice);
     }
 
     public int getOrderCountAtPrice(double price, Side side) {
-        TreeMap<Double, Queue<Order>> book = side == Side.BUY ? bids : asks;
+        Queue<Order> orders = this.getOrdersAtPrice(price, side);
+        return orders == null ? 0 : orders.size();
+    }
 
-        Queue<Order> orders =  book.get(price);
+    public double getVolumeAtPrice(double price, Side side) {
+        Queue<Order> orders = this.getOrdersAtPrice(price, side);
 
         if (orders == null) {
             return 0;
         }
 
-        return orders.size();
+        return orders.parallelStream().mapToDouble(Order::getQuantity).sum();
     }
 
     public Order getOrder(UUID orderId) {
@@ -195,30 +223,20 @@ public class OrderBook {
         return this.totalVolume;
     }
 
-    public double getVolumeAtPrice(double price, Side side) {
-        TreeMap<Double, Queue<Order>> book = side == Side.BUY ? bids : asks;
-        Queue<Order> orders = book.get(price);
-
-        if (orders == null) {
-            return 0;
-        }
-
-        return orders.parallelStream().mapToDouble(Order::getQuantity).sum();
-    }
-
     public double getSpread() {
-        double bestBid = this.getBestBid();
-        double bestAsk = this.getBestAsk();
-
-        if (Double.isNaN(bestBid) || Double.isNaN(bestAsk)) {
+        if (bids.isEmpty() || asks.isEmpty()) {
             return Double.NaN;
         }
 
-        return bestAsk - bestBid;
+        long bestBid = bids.firstKey();
+        long bestAsk = asks.firstKey();
+        long spreadTicks = bestAsk - bestBid;
+
+        return Price.toDouble(spreadTicks, instrument.getScale());
     }
 
-    public double getDepth(Side side) {
-        TreeMap<Double, Queue<Order>> book = side == Side.BUY ? this.bids : this.asks;
+    public int getDepth(Side side) {
+        TreeMap<Long, Queue<Order>> book = side == Side.BUY ? this.bids : this.asks;
 
         return book.size();
     }

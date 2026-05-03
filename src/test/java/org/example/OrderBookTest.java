@@ -10,16 +10,19 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 public class OrderBookTest {
+    private int instrumentScale;
     private OrderBook orderBook;
 
     @BeforeEach
     void setUp() {
-        orderBook = new OrderBook();
+        Instrument instrument = new Instrument("AAPL", 100, 1);
+        instrumentScale = instrument.getScale();
+        orderBook = new OrderBook(instrument);
     }
 
     @Test
     void shouldAddBuyOrderToBids() {
-        Order order = new Order(100.0, 10.0, Side.BUY);
+        Order order = new Order(100.0, 10.0, Side.BUY, instrumentScale);
 
         orderBook.addOrder(order);
 
@@ -29,7 +32,7 @@ public class OrderBookTest {
 
     @Test
     void shouldAddSellOrderToAsks() {
-        Order order = new Order(100.0, 10.0, Side.SELL);
+        Order order = new Order(100.0, 10.0, Side.SELL, instrumentScale);
 
         orderBook.addOrder(order);
 
@@ -44,7 +47,7 @@ public class OrderBookTest {
 
     @Test
     void shouldGetOrderFromOrderMap() {
-        Order order = new Order(100.0, 10.0, Side.BUY);
+        Order order = new Order(100.0, 10.0, Side.BUY, instrumentScale);
 
         orderBook.addOrder(order);
         Order retrievedOrder = orderBook.getOrder(order.getOrderId());
@@ -53,15 +56,15 @@ public class OrderBookTest {
 
     @Test
     void shouldNotGetNonExistingOrderFromOrderMap() {
-        Order order = new Order(100.0, 10.0, Side.BUY);
+        Order order = new Order(100.0, 10.0, Side.BUY, instrumentScale);
 
         assertNull(orderBook.getOrder(order.getOrderId()));
     }
 
     @Test
     void shouldSuccessfullyCancelExistingUnmatchedOrder() {
-        Order order = new Order(100.0, 10.0, Side.BUY);
-        Order order2 = new Order(101.0, 10.0, Side.SELL);
+        Order order = new Order(100.0, 10.0, Side.BUY, instrumentScale);
+        Order order2 = new Order(101.0, 10.0, Side.SELL, instrumentScale);
 
         orderBook.addOrder(order);
         orderBook.addOrder(order2);
@@ -82,7 +85,7 @@ public class OrderBookTest {
 
     @Test
     void shouldNotCancelNonExistingOrder() {
-        Order order = new Order(100.0, 10.0, Side.BUY);
+        Order order = new Order(100.0, 10.0, Side.BUY, instrumentScale);
 
         assertThrows(IllegalStateException.class, () -> orderBook.cancelOrder(order.getOrderId()));
         assertThrows(IllegalArgumentException.class, () -> orderBook.cancelOrder(null));
@@ -91,30 +94,30 @@ public class OrderBookTest {
 
     @Test
     void shouldTrackBestBidsAsHighestPrice() {
-        orderBook.addOrder(new Order(100.14, 10.0, Side.BUY));
-        orderBook.addOrder(new Order(90.0, 10.0, Side.BUY));
-        orderBook.addOrder(new Order(80.0, 10.0, Side.BUY));
+        orderBook.addOrder(new Order(100.14, 10.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(new Order(90.0, 10.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(new Order(80.0, 10.0, Side.BUY, instrumentScale));
 
         assertEquals(100.14, orderBook.getBestBid());
     }
 
     @Test
     void shouldTrackBestAsksAsLowestPrice() {
-        orderBook.addOrder(new Order(100.14, 10.0, Side.SELL));
-        orderBook.addOrder(new Order(90.0, 10.0, Side.SELL));
-        orderBook.addOrder(new Order(80.23, 10.0, Side.SELL));
+        orderBook.addOrder(new Order(100.14, 10.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(new Order(90.0, 10.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(new Order(80.23, 10.0, Side.SELL, instrumentScale));
 
         assertEquals(80.23, orderBook.getBestAsk());
     }
 
     @Test
     void shouldTrackOrderCountAtPrice() {
-        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY));
-        orderBook.addOrder(new Order(100.0, 20.0, Side.BUY));
+        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(new Order(100.0, 20.0, Side.BUY, instrumentScale));
 
-        orderBook.addOrder(new Order(101.0, 30.0, Side.SELL));
-        orderBook.addOrder(new Order(101.0, 40.0, Side.SELL));
-        orderBook.addOrder(new Order(102.0, 50.0, Side.SELL));
+        orderBook.addOrder(new Order(101.0, 30.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(new Order(101.0, 40.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(new Order(102.0, 50.0, Side.SELL, instrumentScale));
 
 
         assertEquals(2, orderBook.getOrderCountAtPrice(100.0, Side.BUY));
@@ -124,19 +127,19 @@ public class OrderBookTest {
 
     @Test
     void shouldGetTotalVolume() {
-        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY));
-        orderBook.addOrder(new Order(100.0, 20.0, Side.BUY));
+        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(new Order(100.0, 20.0, Side.BUY, instrumentScale));
 
-        orderBook.addOrder(new Order(101.0, 30.0, Side.SELL));
-        orderBook.addOrder(new Order(101.0, 40.0, Side.SELL));
-        orderBook.addOrder(new Order(102.0, 50.0, Side.SELL));
+        orderBook.addOrder(new Order(101.0, 30.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(new Order(101.0, 40.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(new Order(102.0, 50.0, Side.SELL, instrumentScale));
 
         assertEquals(150.0, orderBook.getTotalVolume());
     }
 
     @Test
     void shouldNotAddDuplicateOrder() {
-        Order order = new Order(100.0, 10.0, Side.BUY);
+        Order order = new Order(100.0, 10.0, Side.BUY, instrumentScale);
 
         orderBook.addOrder(order);
 
@@ -150,11 +153,11 @@ public class OrderBookTest {
 
     @Test
     void shouldModifyOrderPrice() {
-        Order order = new Order(100.0, 10.0, Side.BUY);
+        Order order = new Order(100.0, 10.0, Side.BUY, instrumentScale);
 
         orderBook.addOrder(order);
 
-        Order modifiedOrder = new Order(105.0, 10.0, Side.BUY);
+        Order modifiedOrder = new Order(105.0, 10.0, Side.BUY, instrumentScale);
 
         orderBook.modifyOrder(order.getOrderId(), modifiedOrder);
 
@@ -173,10 +176,10 @@ public class OrderBookTest {
 
     @Test
     void shouldModifyOrderQuantity() {
-        Order order = new Order(100.0, 10.0, Side.BUY);
+        Order order = new Order(100.0, 10.0, Side.BUY, instrumentScale);
         orderBook.addOrder(order);
 
-        Order modifiedOrder = new Order(100.0, 20.0, Side.BUY);
+        Order modifiedOrder = new Order(100.0, 20.0, Side.BUY, instrumentScale);
         orderBook.modifyOrder(order.getOrderId(), modifiedOrder);
 
         assertNull(orderBook.getOrder(order.getOrderId()));
@@ -190,17 +193,17 @@ public class OrderBookTest {
     @Test
     void shouldNotModifyNonExistingOrder() {
         UUID randomId = UUID.randomUUID();
-        Order newOrder = new Order(100.0, 10.0, Side.BUY);
+        Order newOrder = new Order(100.0, 10.0, Side.BUY, instrumentScale);
 
         assertThrows(IllegalStateException.class, () -> orderBook.modifyOrder(randomId, newOrder));
     }
 
     @Test
     void shouldNotModifyOrderWithDifferentSide() {
-        Order order = new Order(100.0, 10.0, Side.BUY);
+        Order order = new Order(100.0, 10.0, Side.BUY, instrumentScale);
         orderBook.addOrder(order);
 
-        Order modifiedOrder = new Order(100.0, 10.0, Side.SELL);
+        Order modifiedOrder = new Order(100.0, 10.0, Side.SELL, instrumentScale);
 
         assertThrows(IllegalArgumentException.class,
                 () -> orderBook.modifyOrder(order.getOrderId(), modifiedOrder));
@@ -208,18 +211,18 @@ public class OrderBookTest {
 
     @Test
     void shouldMatchWhenModifiedOrderCrossesSpread() {
-        Order buyOrder = new Order(99.0, 10.0, Side.BUY);
-        Order sellOrder = new Order(100.0, 10.0, Side.SELL);
+        Order buyOrder = new Order(99.0, 10.0, Side.BUY, instrumentScale);
+        Order sellOrder = new Order(100.0, 10.0, Side.SELL, instrumentScale);
 
         orderBook.addOrder(buyOrder);
         orderBook.addOrder(sellOrder);
 
-        Order modifiedBuyOrder = new Order(100.0, 10.0, Side.BUY);
+        Order modifiedBuyOrder = new Order(100.0, 10.0, Side.BUY, instrumentScale);
         List<Trade> trades = orderBook.modifyOrder(buyOrder.getOrderId(), modifiedBuyOrder);
 
         assertNotNull(trades);
         assertEquals(1, trades.size());
-        assertEquals(100.0, trades.getFirst().getPrice());
+        assertEquals(10000L, trades.getFirst().getPrice());
         assertEquals(10.0, trades.getFirst().getQuantity());
 
         assertEquals(Double.NaN, orderBook.getBestBid());
@@ -229,12 +232,12 @@ public class OrderBookTest {
 
     @Test
     void shouldGetVolumeAtPriceLevel() {
-        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY));
-        orderBook.addOrder(new Order(100.0, 20.0, Side.BUY));
-        orderBook.addOrder(new Order(100.0, 15.0, Side.BUY));
+        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(new Order(100.0, 20.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(new Order(100.0, 15.0, Side.BUY, instrumentScale));
 
-        orderBook.addOrder(new Order(101.0, 5.0, Side.SELL));
-        orderBook.addOrder(new Order(101.0, 8.0, Side.SELL));
+        orderBook.addOrder(new Order(101.0, 5.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(new Order(101.0, 8.0, Side.SELL, instrumentScale));
 
         assertEquals(45.0, orderBook.getVolumeAtPrice(100.0, Side.BUY));
         assertEquals(13.0, orderBook.getVolumeAtPrice(101.0, Side.SELL));
@@ -243,15 +246,15 @@ public class OrderBookTest {
 
     @Test
     void shouldCalculateSpread() {
-        orderBook.addOrder(new Order(99.0, 10.0, Side.BUY));
-        orderBook.addOrder(new Order(101.0, 10.0, Side.SELL));
+        orderBook.addOrder(new Order(99.0, 10.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(new Order(101.0, 10.0, Side.SELL, instrumentScale));
 
         assertEquals(2.0, orderBook.getSpread());
     }
 
     @Test
     void shouldReturnNaNSpreadWhenOneSideEmpty() {
-        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY));
+        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY, instrumentScale));
 
         assertEquals(Double.NaN, orderBook.getSpread());
     }
@@ -263,9 +266,9 @@ public class OrderBookTest {
 
     @Test
     void shouldUpdateSpreadAfterCancel() {
-        Order bid1 = new Order(100.0, 10.0, Side.BUY);
-        Order bid2 = new Order(99.0, 10.0, Side.BUY);
-        Order ask = new Order(101.0, 10.0, Side.SELL);
+        Order bid1 = new Order(100.0, 10.0, Side.BUY, instrumentScale);
+        Order bid2 = new Order(99.0, 10.0, Side.BUY, instrumentScale);
+        Order ask = new Order(101.0, 10.0, Side.SELL, instrumentScale);
 
         orderBook.addOrder(bid1);
         orderBook.addOrder(bid2);
@@ -280,13 +283,13 @@ public class OrderBookTest {
 
     @Test
     void shouldGetBookDepth() {
-        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY));
-        orderBook.addOrder(new Order(100.0, 5.0, Side.BUY));  // same level
-        orderBook.addOrder(new Order(99.0, 10.0, Side.BUY));
-        orderBook.addOrder(new Order(98.0, 10.0, Side.BUY));
+        orderBook.addOrder(new Order(100.0, 10.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(new Order(100.0, 5.0, Side.BUY, instrumentScale));  // same level
+        orderBook.addOrder(new Order(99.0, 10.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(new Order(98.0, 10.0, Side.BUY, instrumentScale));
 
-        orderBook.addOrder(new Order(101.0, 10.0, Side.SELL));
-        orderBook.addOrder(new Order(102.0, 10.0, Side.SELL));
+        orderBook.addOrder(new Order(101.0, 10.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(new Order(102.0, 10.0, Side.SELL, instrumentScale));
 
         assertEquals(3, orderBook.getDepth(Side.BUY));
         assertEquals(2, orderBook.getDepth(Side.SELL));
@@ -300,8 +303,8 @@ public class OrderBookTest {
 
     @Test
     void shouldUpdateDepthAfterCancel() {
-        Order order1 = new Order(100.0, 10.0, Side.BUY);
-        Order order2 = new Order(99.0, 10.0, Side.BUY);
+        Order order1 = new Order(100.0, 10.0, Side.BUY, instrumentScale);
+        Order order2 = new Order(99.0, 10.0, Side.BUY, instrumentScale);
 
         orderBook.addOrder(order1);
         orderBook.addOrder(order2);
@@ -315,9 +318,9 @@ public class OrderBookTest {
 
     @Test
     void shouldTrackTotalTradeCount() {
-        Order order1 = new Order(100.0, 10.0, Side.BUY);
-        Order order2 = new Order(100.0, 5.0, Side.SELL);
-        Order order3 = new Order(100.0, 5.0, Side.SELL);
+        Order order1 = new Order(100.0, 10.0, Side.BUY, instrumentScale);
+        Order order2 = new Order(100.0, 5.0, Side.SELL, instrumentScale);
+        Order order3 = new Order(100.0, 5.0, Side.SELL, instrumentScale);
         orderBook.addOrder(order1);
         orderBook.addOrder(order2);
         orderBook.addOrder(order3);
@@ -327,10 +330,22 @@ public class OrderBookTest {
 
     @Test
     void shouldTrackZeroTradesWhenNoMatches() {
-        orderBook.addOrder(new Order(99.0, 10.0, Side.BUY));
-        orderBook.addOrder(new Order(101.0, 10.0, Side.SELL));
+        orderBook.addOrder(new Order(99.0, 10.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(new Order(101.0, 10.0, Side.SELL, instrumentScale));
 
         assertEquals(0, orderBook.getTradeCounts());
+    }
+
+    @Test
+    void shouldAssociateWithInstrument() {
+        assertEquals("AAPL", orderBook.getInstrument().getSymbol());
+        assertEquals(100, orderBook.getInstrument().getScale());
+        assertEquals(1, orderBook.getInstrument().getLotSize());
+    }
+
+    @Test
+    void shouldRejectNullInstrument() {
+        assertThrows(IllegalArgumentException.class, () -> new OrderBook(null));
     }
 
 }
