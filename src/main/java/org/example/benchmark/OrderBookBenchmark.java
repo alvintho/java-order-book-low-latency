@@ -27,7 +27,7 @@ public class OrderBookBenchmark {
     private Order[] orders;
 
     /*
-    * Runs once per full benchmark run (default).
+    * Pre-create order attributes per trial
     * */
 
     @Setup(Level.Trial)
@@ -47,8 +47,8 @@ public class OrderBookBenchmark {
     }
 
     /*
-    * Pre-generate a set of different 100K Order objects per invocation
-    * Real markets don't replay identical orders
+    * Pre-create a set of 100K Order objects per invocation
+    * Production systems ingests all 100k orders after orders are ready
     * */
     @Setup(Level.Invocation)
     public void invocationSetup() {
