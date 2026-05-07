@@ -1,7 +1,1 @@
-# hft-low-latency-order-book
-
-# Benchmark Testing
-```aiignore
-mvn clean package
-java -jar target/limit_order_book_engine-1.0-SNAPSHOT.jar OrderBookBenchmark
-```
+# hft-low-latency-lob
