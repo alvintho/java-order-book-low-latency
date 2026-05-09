@@ -10,7 +10,8 @@ public class OrderBook {
     private int tradeCount;
     private final TreeMap<Long, Queue<Order>> bids = new TreeMap<>(Collections.reverseOrder()); // Buy to the lowest ask-er
     private final TreeMap<Long, Queue<Order>> asks = new TreeMap<>(); // Sell to the highest bidder
-    private final Map<UUID, Order> orderMap = new HashMap<>();
+    private final Map<Long, Order> orderMap = new HashMap<>();
+    private final IdGenerator tradeIdGen;
 
     public OrderBook(Instrument instrument) {
         if (instrument == null) {
@@ -21,6 +22,7 @@ public class OrderBook {
         this.totalBidVolume = 0;
         this.totalAskVolume = 0;
         this.tradeCount = 0;
+        this.tradeIdGen = new IdGenerator();
     }
 
     public Instrument getInstrument() {
@@ -28,7 +30,7 @@ public class OrderBook {
     }
 
     public List<Trade> addOrder(Order order) {
-        if (order == null || order.getOrderId() == null) {
+        if (order == null) {
             throw new IllegalArgumentException("Order cannot be null");
         }
 
@@ -37,7 +39,11 @@ public class OrderBook {
         }
 
         TreeMap<Long, Queue<Order>> book = order.isBid() ? bids : asks;
-        book.computeIfAbsent(order.getPrice(), k -> new LinkedList<>()).add(order);
+        /*
+        * Change from LinkedList --> ArrayDeque for performance and lower memory overhead (no next/previous pointers)
+        * Reduced GC impact as fewer object creations per insertions
+        * */
+        book.computeIfAbsent(order.getPrice(), k -> new ArrayDeque<>()).add(order);
         this.orderMap.put(order.getOrderId(), order);
         this.addVolume(order.getQuantity(), order.getSide());
 
@@ -45,9 +51,9 @@ public class OrderBook {
     }
 
 
-    public void cancelOrder (UUID orderId) {
-        if (orderId == null) {
-            throw new IllegalArgumentException("Order ID cannot be null");
+    public void cancelOrder (long orderId) {
+        if (orderId < 1) {
+            throw new IllegalArgumentException("Order ID cannot must be positive");
         }
 
         Order order = this.orderMap.get(orderId);
@@ -60,8 +66,8 @@ public class OrderBook {
         this.removeVolume(order.getQuantity(), order.getSide());
     }
 
-    public List<Trade> modifyOrder(UUID orderId, Order modifiedOrder) {
-        if (modifiedOrder == null || modifiedOrder.getOrderId() == null) {
+    public List<Trade> modifyOrder(long orderId, Order modifiedOrder) {
+        if (modifiedOrder == null) {
             throw new IllegalArgumentException("Order cannot be null");
         }
 
@@ -157,10 +163,11 @@ public class OrderBook {
                 this.removeOrderFromBook(incomingOrder);
             }
 
-            UUID buyOrderId = incomingOrder.isBid() ? incomingOrder.getOrderId() : restingOrder.getOrderId();
-            UUID sellOrderId = incomingOrder.isBid() ? restingOrder.getOrderId() : incomingOrder.getOrderId();
+            long buyOrderId = incomingOrder.isBid() ? incomingOrder.getOrderId() : restingOrder.getOrderId();
+            long sellOrderId = incomingOrder.isBid() ? restingOrder.getOrderId() : incomingOrder.getOrderId();
 
             trades.add(new Trade(
+                    tradeIdGen.next(),
                     bestOppositePrice,
                     tradeQuantity,
                     buyOrderId,
@@ -212,10 +219,14 @@ public class OrderBook {
             return 0;
         }
 
-        return orders.parallelStream().mapToDouble(Order::getQuantity).sum();
+        double volume = 0.0;
+        for (Order order : orders) {
+            volume += order.getQuantity();
+        }
+        return volume;
     }
 
-    public Order getOrder(UUID orderId) {
+    public Order getOrder(long orderId) {
         return this.orderMap.get(orderId);
     }
 
