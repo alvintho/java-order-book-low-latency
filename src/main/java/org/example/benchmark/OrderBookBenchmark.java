@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 public class OrderBookBenchmark {
 
     private static final int BATCH_SIZE = 100_000;
+    private IdGenerator orderIdGen;
 
     private Instrument instrument;
     private double[] prices;
@@ -65,19 +66,20 @@ public class OrderBookBenchmark {
         orderBook = new OrderBook(instrument);
         orders = new Order[BATCH_SIZE];
         noMatchOrders = new Order[BATCH_SIZE];
+        orderIdGen = new IdGenerator();
 
         for (int i = 0; i < BATCH_SIZE; i++) {
             orders[i] = new Order(
-                    prices[i], quantities[i], sides[i], instrument.getScale()
+                    orderIdGen.next(), prices[i], quantities[i], sides[i], instrument.getScale()
             );
         }
 
         // Interleave bids and asks that never cross
         for (int i = 0; i < BATCH_SIZE; i++) {
             noMatchOrders[i] = (i % 2 == 0)
-                    ? new Order(noMatchBidPrices[i / 2 % 50], 10.0,
+                    ? new Order(orderIdGen.next(), noMatchBidPrices[i / 2 % 50], 10.0,
                     Side.BUY,  instrument.getScale())
-                    : new Order(noMatchAskPrices[i / 2 % 50], 10.0,
+                    : new Order(orderIdGen.next(), noMatchAskPrices[i / 2 % 50], 10.0,
                     Side.SELL, instrument.getScale());
         }
     }

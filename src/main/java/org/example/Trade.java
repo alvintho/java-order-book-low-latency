@@ -1,17 +1,15 @@
 package org.example;
 
-import java.util.UUID;
-
 public class Trade {
-    private final UUID tradeId;
-    private final UUID buyOrderId;
-    private final UUID sellOrderId;
+    private final long tradeId;
+    private final long buyOrderId;
+    private final long sellOrderId;
     private final long price;
     private final double quantity;
     private final long timestamp;
 
-    public Trade(long price, double quantity, UUID buyOrderId, UUID sellOrderId) {
-        this.tradeId = UUID.randomUUID();
+    public Trade(long tradeId,long price, double quantity, long buyOrderId, long sellOrderId) {
+        this.tradeId = tradeId;
         this.buyOrderId = buyOrderId;
         this.sellOrderId = sellOrderId;
         this.price = price;
@@ -19,7 +17,7 @@ public class Trade {
         this.timestamp = System.nanoTime();
     }
 
-    public UUID getTradeId() {
+    public long getTradeId() {
         return this.tradeId;
     }
 
@@ -35,11 +33,11 @@ public class Trade {
         return this.timestamp;
     }
 
-    public UUID getBuyOrderId() {
+    public long getBuyOrderId() {
         return buyOrderId;
     }
 
-    public UUID getSellOrderId() {
+    public long getSellOrderId() {
         return sellOrderId;
     }
 }

@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class OrderMatchingTest {
     private int instrumentScale;
     private OrderBook orderBook;
+    private IdGenerator orderIdGen;
 
     /*
     * A match occurs when:
@@ -25,6 +26,7 @@ public class OrderMatchingTest {
         Instrument instrument = new Instrument("APPL", 100, 1);
         instrumentScale = instrument.getScale();
         orderBook = new OrderBook(instrument);
+        orderIdGen = new IdGenerator();
     }
 
     @Test
@@ -33,8 +35,8 @@ public class OrderMatchingTest {
         * Bid Price = Ask Price
         * Should match
         * */
-        Order buyOrder = new Order(100.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(100.0, 10.0, Side.SELL, instrumentScale);
+        Order buyOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
+        Order sellOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.SELL, instrumentScale);
 
         orderBook.addOrder(buyOrder);
         List<Trade> trades = orderBook.addOrder(sellOrder);
@@ -57,8 +59,8 @@ public class OrderMatchingTest {
          * Bid Price >= Ask Price
          * Should match
          * */
-        Order buyOrder = new Order(101.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(100.0, 10.0, Side.SELL, instrumentScale);
+        Order buyOrder = new Order(orderIdGen.next(), 101.0, 10.0, Side.BUY, instrumentScale);
+        Order sellOrder = new Order(orderIdGen.next(),100.0, 10.0, Side.SELL, instrumentScale);
 
         orderBook.addOrder(sellOrder);
         List<Trade> trades = orderBook.addOrder(buyOrder);
@@ -79,8 +81,8 @@ public class OrderMatchingTest {
          * Bid Price < Ask Price
          * Should NOT match
          * */
-        Order buyOrder = new Order(99.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(100.0, 10.0, Side.SELL, instrumentScale);
+        Order buyOrder = new Order(orderIdGen.next(), 99.0, 10.0, Side.BUY, instrumentScale);
+        Order sellOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.SELL, instrumentScale);
 
         orderBook.addOrder(sellOrder);
         List<Trade> trades = orderBook.addOrder(buyOrder);
@@ -93,8 +95,8 @@ public class OrderMatchingTest {
 
     @Test
     void shouldPartiallyFillWhenIncomingOrderVolumeIsSmaller() {
-        Order buyOrder = new Order(100.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(100.0, 5.0, Side.SELL, instrumentScale);
+        Order buyOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
+        Order sellOrder = new Order(orderIdGen.next(), 100.0, 5.0, Side.SELL, instrumentScale);
 
         orderBook.addOrder(buyOrder);
         List<Trade> trades = orderBook.addOrder(sellOrder);
@@ -114,8 +116,8 @@ public class OrderMatchingTest {
 
     @Test
     void shouldPartiallyFillWhenIncomingOrderVolumeIsLarger() {
-        Order buyOrder = new Order(100.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(100.0, 15.0, Side.SELL, instrumentScale);
+        Order buyOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
+        Order sellOrder = new Order(orderIdGen.next(), 100.0, 15.0, Side.SELL, instrumentScale);
 
         orderBook.addOrder(buyOrder);
         List<Trade> trades = orderBook.addOrder(sellOrder);
@@ -135,9 +137,9 @@ public class OrderMatchingTest {
 
     @Test
     void shouldMatchOldestOrderFirstAtSamePrice() { // price-time priority
-        Order firstBuy = new Order(100.0, 5.0, Side.BUY, instrumentScale);
-        Order secondBuy = new Order(100.0, 5.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(100.0, 5.0, Side.SELL, instrumentScale);
+        Order firstBuy = new Order(orderIdGen.next(), 100.0, 5.0, Side.BUY, instrumentScale);
+        Order secondBuy = new Order(orderIdGen.next(), 100.0, 5.0, Side.BUY, instrumentScale);
+        Order sellOrder = new Order(orderIdGen.next(), 100.0, 5.0, Side.SELL, instrumentScale);
 
         orderBook.addOrder(firstBuy);
         orderBook.addOrder(secondBuy);
@@ -162,15 +164,15 @@ public class OrderMatchingTest {
 
     @Test
     void shouldMatchAcrossMultipleOrdersAtSamePrice() {
-        Order firstBuy = new Order(100.0, 3.0, Side.BUY, instrumentScale);
-        Order secondBuy = new Order(100.0, 4.0, Side.BUY, instrumentScale);
-        Order thirdBuy = new Order(100.0, 3.0, Side.BUY, instrumentScale);
+        Order firstBuy = new Order(orderIdGen.next(), 100.0, 3.0, Side.BUY, instrumentScale);
+        Order secondBuy = new Order(orderIdGen.next(), 100.0, 4.0, Side.BUY, instrumentScale);
+        Order thirdBuy = new Order(orderIdGen.next(), 100.0, 3.0, Side.BUY, instrumentScale);
 
         orderBook.addOrder(firstBuy);
         orderBook.addOrder(secondBuy);
         orderBook.addOrder(thirdBuy);
 
-        Order sellOrder = new Order(100.0, 10.0, Side.SELL, instrumentScale);
+        Order sellOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.SELL, instrumentScale);
 
         List<Trade> trades = orderBook.addOrder(sellOrder);
 
@@ -204,15 +206,15 @@ public class OrderMatchingTest {
 
     @Test
     void shouldMatchIncomingAskAcrossMultipleBidLevels() {
-        orderBook.addOrder(new Order(100.0, 5.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(99.0, 5.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(98.0, 5.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(new Order(orderIdGen.next(), 100.0, 5.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(new Order(orderIdGen.next(), 99.0, 5.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(new Order(orderIdGen.next(), 98.0, 5.0, Side.BUY, instrumentScale));
 
         // Sell 12 should consume:
         // - 5 at 100.0 (best bid)
         // - 5 at 99.0
         // - 2 at 98.0 (partial)
-        Order sellOrder = new Order(98.0, 12.0, Side.SELL, instrumentScale);
+        Order sellOrder = new Order(orderIdGen.next(), 98.0, 12.0, Side.SELL, instrumentScale);
         List<Trade> trades = orderBook.addOrder(sellOrder);
 
         assertNotNull(trades);
@@ -246,15 +248,15 @@ public class OrderMatchingTest {
 
     @Test
     void shouldMatchIncomingBuyAcrossMultipleAskLevels() {
-        orderBook.addOrder(new Order(100.0, 5.0, Side.SELL, instrumentScale));
-        orderBook.addOrder(new Order(101.0, 5.0, Side.SELL, instrumentScale));
-        orderBook.addOrder(new Order(102.0, 5.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(new Order(orderIdGen.next(), 100.0, 5.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(new Order(orderIdGen.next(), 101.0, 5.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(new Order(orderIdGen.next(), 102.0, 5.0, Side.SELL, instrumentScale));
 
         // Buy 12 should consume:
         // - 5 at 100.0 (best ask)
         // - 5 at 101.0
         // - 2 at 102.0 (partial)
-        Order buyOrder = new Order(102.0, 12.0, Side.BUY, instrumentScale);
+        Order buyOrder = new Order(orderIdGen.next(), 102.0, 12.0, Side.BUY, instrumentScale);
         List<Trade> trades = orderBook.addOrder(buyOrder);
 
         assertNotNull(trades);
@@ -288,8 +290,8 @@ public class OrderMatchingTest {
 
     @Test
     void shouldLinkTradeToParticipatingOrders() {
-        Order buyOrder = new Order(100.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(100.0, 10.0, Side.SELL, instrumentScale);
+        Order buyOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
+        Order sellOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.SELL, instrumentScale);
 
         orderBook.addOrder(buyOrder);
         List<Trade> trades = orderBook.addOrder(sellOrder);
