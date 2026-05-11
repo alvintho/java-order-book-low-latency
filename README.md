@@ -15,6 +15,7 @@ java -jar target/limit_order_book_engine-1.0-SNAPSHOT.jar UUIDBenchmark -prof gc
 
 # Latency Optimization Performance Improvements
 ```aiignore
+                            (Baseline)
 Benchmark               │ UUID+LinkedList │ Long+ArrayDeque │ +EmptyList      │ Total Improvement
 ────────────────────────┼─────────────────┼─────────────────┼─────────────────┼──────────────────
 ingest100KOrders (ns)   │ 233.8 ± 6.2     │ 113.3 ± 0.7     │ 115.62 ± 0.67   │ ~50.5% faster
