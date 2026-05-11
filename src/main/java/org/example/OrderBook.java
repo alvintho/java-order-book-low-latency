@@ -12,6 +12,7 @@ public class OrderBook {
     private final TreeMap<Long, Queue<Order>> asks = new TreeMap<>(); // Sell to the highest bidder
     private final Map<Long, Order> orderMap = new HashMap<>();
     private final IdGenerator tradeIdGen;
+    private static final List<Trade> NO_TRADES = Collections.emptyList();
 
     public OrderBook(Instrument instrument) {
         if (instrument == null) {
@@ -124,9 +125,9 @@ public class OrderBook {
 
     private List<Trade> matchOrder(Order incomingOrder) {
         TreeMap<Long, Queue<Order>> oppositeBook = incomingOrder.isBid() ? asks : bids;
-        List<Trade> trades = new ArrayList<>();
+        List<Trade> trades = null;                              // ← CHANGED: was new ArrayList<>()
 
-        double incomingOrderPrice = incomingOrder.getPrice();
+        long incomingOrderPrice = incomingOrder.getPrice();     // ← CHANGED: was double
 
         while(!oppositeBook.isEmpty() && !incomingOrder.isFilled()) {
             Long bestOppositePrice = oppositeBook.firstKey();
@@ -144,17 +145,19 @@ public class OrderBook {
                 continue;
             }
 
+            if (trades == null) {                               // ← ADDED: lazy init
+                trades = new ArrayList<>(4);                    // ← ADDED
+            }                                                   // ← ADDED
+
             Order restingOrder = ordersAtBestPrice.peek();
             double tradeQuantity = Math.min(incomingOrder.getQuantity(), restingOrder.getQuantity());
 
-            // Handle partial fills
             incomingOrder.reduceQuantity(tradeQuantity);
             restingOrder.reduceQuantity(tradeQuantity);
 
-            removeVolume(tradeQuantity, restingOrder.getSide()); // Always remove traded volume from resting side
+            removeVolume(tradeQuantity, restingOrder.getSide());
             removeVolume(tradeQuantity, incomingOrder.getSide());
 
-            // Handle full-fills
             if (restingOrder.isFilled()) {
                 this.removeOrderFromBook(restingOrder);
             }
@@ -176,9 +179,7 @@ public class OrderBook {
             this.tradeCount += 1;
         }
 
-
-
-        return trades;
+        return trades == null ? NO_TRADES : trades;             // ← CHANGED: was return trades
     }
 
     public double getTotalBidVolume() {
