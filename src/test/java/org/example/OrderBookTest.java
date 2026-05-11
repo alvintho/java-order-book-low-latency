@@ -349,4 +349,16 @@ public class OrderBookTest {
         assertThrows(IllegalArgumentException.class, () -> new OrderBook(null));
     }
 
+    @Test
+    void shouldReturnEmptyTradesWhenNoMatch() {
+        Order buyOrder = new Order(orderIdGen.next(), 99.0, 10.0, Side.BUY, instrumentScale);
+        Order sellOrder = new Order(orderIdGen.next(), 101.0, 10.0, Side.SELL, instrumentScale);
+
+        List<Trade> trades1 = orderBook.addOrder(buyOrder);
+        List<Trade> trades2 = orderBook.addOrder(sellOrder);
+
+        assertTrue(trades1.isEmpty());
+        assertTrue(trades2.isEmpty());
+    }
+
 }
