@@ -6,21 +6,50 @@ public class Order {
     private double quantity;
     private final long timestamp;
     private final Side side;
+    private final OrderType orderType;
 
-    public Order(long orderId, double price, double quantity, Side side, int scale) {
+    // ── Private constructor — all creation goes through factories
+    private Order(long orderId, long price, double quantity,
+                  Side side, OrderType orderType) {
         if (orderId <= 0) {
-            throw new IllegalArgumentException("Order ID must be positive: " + orderId);
+            throw new IllegalArgumentException(
+                    "Order ID must be positive: " + orderId);
         }
-
         if (quantity <= 0.0) {
-            throw new IllegalArgumentException("Quantity must be positive: " + quantity);
+            throw new IllegalArgumentException(
+                    "Quantity must be positive: " + quantity);
         }
 
         this.orderId = orderId;
-        this.price = Price.toLong(price, scale);
+        this.price = price;
         this.quantity = quantity;
         this.side = side;
+        this.orderType = orderType;
         this.timestamp = System.nanoTime();
+    }
+
+    // ── Static factory methods ──────────────────────────────
+
+    public static Order limitBuy(long orderId, double price,
+                                 double quantity, int scale) {
+        return new Order(orderId, Price.toLong(price, scale),
+                quantity, Side.BUY, OrderType.LIMIT);
+    }
+
+    public static Order limitSell(long orderId, double price,
+                                  double quantity, int scale) {
+        return new Order(orderId, Price.toLong(price, scale),
+                quantity, Side.SELL, OrderType.LIMIT);
+    }
+
+    public static Order marketBuy(long orderId, double quantity) {
+        return new Order(orderId, 0L, quantity,
+                Side.BUY, OrderType.MARKET);
+    }
+
+    public static Order marketSell(long orderId, double quantity) {
+        return new Order(orderId, 0L, quantity,
+                Side.SELL, OrderType.MARKET);
     }
 
     public long getOrderId() {
@@ -43,8 +72,16 @@ public class Order {
         return this.side;
     }
 
+    public OrderType getOrderType() {
+        return this.orderType;
+    }
+
     public boolean isBid() {
         return this.side == Side.BUY;
+    }
+
+    public boolean isMarket() {
+        return this.orderType == OrderType.MARKET;
     }
 
     public void reduceQuantity(double tradeQuantity) {

@@ -64,23 +64,28 @@ public class OrderBookBenchmark {
     @Setup(Level.Invocation)
     public void invocationSetup() {
         orderBook = new OrderBook(instrument);
+        orderIdGen = new IdGenerator();
         orders = new Order[BATCH_SIZE];
         noMatchOrders = new Order[BATCH_SIZE];
-        orderIdGen = new IdGenerator();
 
         for (int i = 0; i < BATCH_SIZE; i++) {
-            orders[i] = new Order(
-                    orderIdGen.next(), prices[i], quantities[i], sides[i], instrument.getScale()
-            );
+            orders[i] = sides[i] == Side.BUY
+                    ? Order.limitBuy(
+                    orderIdGen.next(), prices[i],
+                    quantities[i], instrument.getScale())
+                    : Order.limitSell(
+                    orderIdGen.next(), prices[i],
+                    quantities[i], instrument.getScale());
         }
 
-        // Interleave bids and asks that never cross
         for (int i = 0; i < BATCH_SIZE; i++) {
             noMatchOrders[i] = (i % 2 == 0)
-                    ? new Order(orderIdGen.next(), noMatchBidPrices[i / 2 % 50], 10.0,
-                    Side.BUY,  instrument.getScale())
-                    : new Order(orderIdGen.next(), noMatchAskPrices[i / 2 % 50], 10.0,
-                    Side.SELL, instrument.getScale());
+                    ? Order.limitBuy(
+                    orderIdGen.next(), noMatchBidPrices[i / 2 % 50],
+                    10.0, instrument.getScale())
+                    : Order.limitSell(
+                    orderIdGen.next(), noMatchAskPrices[i / 2 % 50],
+                    10.0, instrument.getScale());
         }
     }
 
