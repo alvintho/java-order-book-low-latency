@@ -1,5 +1,10 @@
-package org.example;
+package org.example.engine;
 
+import org.example.model.Instrument;
+import org.example.model.Order;
+import org.example.model.Side;
+import org.example.model.Trade;
+import org.example.util.IdGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
