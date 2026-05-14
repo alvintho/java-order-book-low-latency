@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 10, time = 1)
 @Fork(2)
-public class OrderBookBenchmark {
+public class LimitOrderBenchmark {
 
     private static final int BATCH_SIZE = 100_000;
     private IdGenerator orderIdGen;
@@ -64,30 +64,33 @@ public class OrderBookBenchmark {
     @Setup(Level.Invocation)
     public void invocationSetup() {
         orderBook = new OrderBook(instrument);
+        orderIdGen = new IdGenerator();
         orders = new Order[BATCH_SIZE];
         noMatchOrders = new Order[BATCH_SIZE];
-        orderIdGen = new IdGenerator();
 
         for (int i = 0; i < BATCH_SIZE; i++) {
-            orders[i] = new Order(
-                    orderIdGen.next(), prices[i], quantities[i], sides[i], instrument.getScale()
-            );
+            orders[i] = sides[i] == Side.BUY
+                    ? Order.limitBuy(
+                    orderIdGen.next(), prices[i],
+                    quantities[i], instrument.getScale())
+                    : Order.limitSell(
+                    orderIdGen.next(), prices[i],
+                    quantities[i], instrument.getScale());
         }
 
-        // Interleave bids and asks that never cross
         for (int i = 0; i < BATCH_SIZE; i++) {
             noMatchOrders[i] = (i % 2 == 0)
-                    ? new Order(orderIdGen.next(), noMatchBidPrices[i / 2 % 50], 10.0,
-                    Side.BUY,  instrument.getScale())
-                    : new Order(orderIdGen.next(), noMatchAskPrices[i / 2 % 50], 10.0,
-                    Side.SELL, instrument.getScale());
+                    ? Order.limitBuy(
+                    orderIdGen.next(), noMatchBidPrices[i / 2 % 50],
+                    10.0, instrument.getScale())
+                    : Order.limitSell(
+                    orderIdGen.next(), noMatchAskPrices[i / 2 % 50],
+                    10.0, instrument.getScale());
         }
     }
 
     /**
-     * Realistic benchmark: mixed orders with matching.
      * Measures: insertion + matching + trade creation + volume bookkeeping.
-     * Dead Code Elimination (DCE) safe
      * The JIT cannot delete the addOrder calls because returned trades are consumed
      */
     @Benchmark
@@ -100,6 +103,7 @@ public class OrderBookBenchmark {
         bh.consume(orderBook);
     }
 
+    // Measures: pure insertion cost (TreeMap + HashMap)
     @Benchmark
     @OperationsPerInvocation(BATCH_SIZE)
     public void ingest100KNoMatchOrders(Blackhole bh) {

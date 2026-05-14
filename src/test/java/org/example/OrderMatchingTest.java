@@ -35,8 +35,8 @@ public class OrderMatchingTest {
         * Bid Price = Ask Price
         * Should match
         * */
-        Order buyOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.SELL, instrumentScale);
+        Order buyOrder = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
+        Order sellOrder = Order.limitSell(orderIdGen.next(), 100.0, 10.0, instrumentScale);
 
         orderBook.addOrder(buyOrder);
         List<Trade> trades = orderBook.addOrder(sellOrder);
@@ -59,8 +59,8 @@ public class OrderMatchingTest {
          * Bid Price >= Ask Price
          * Should match
          * */
-        Order buyOrder = new Order(orderIdGen.next(), 101.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(orderIdGen.next(),100.0, 10.0, Side.SELL, instrumentScale);
+        Order buyOrder = Order.limitBuy(orderIdGen.next(), 101.0, 10.0, instrumentScale);
+        Order sellOrder = Order.limitSell(orderIdGen.next(),100.0, 10.0, instrumentScale);
 
         orderBook.addOrder(sellOrder);
         List<Trade> trades = orderBook.addOrder(buyOrder);
@@ -81,8 +81,8 @@ public class OrderMatchingTest {
          * Bid Price < Ask Price
          * Should NOT match
          * */
-        Order buyOrder = new Order(orderIdGen.next(), 99.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.SELL, instrumentScale);
+        Order buyOrder = Order.limitBuy(orderIdGen.next(), 99.0, 10.0, instrumentScale);
+        Order sellOrder = Order.limitSell(orderIdGen.next(), 100.0, 10.0, instrumentScale);
 
         orderBook.addOrder(sellOrder);
         List<Trade> trades = orderBook.addOrder(buyOrder);
@@ -95,8 +95,8 @@ public class OrderMatchingTest {
 
     @Test
     void shouldPartiallyFillWhenIncomingOrderVolumeIsSmaller() {
-        Order buyOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(orderIdGen.next(), 100.0, 5.0, Side.SELL, instrumentScale);
+        Order buyOrder = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
+        Order sellOrder = Order.limitSell(orderIdGen.next(), 100.0, 5.0, instrumentScale);
 
         orderBook.addOrder(buyOrder);
         List<Trade> trades = orderBook.addOrder(sellOrder);
@@ -116,8 +116,8 @@ public class OrderMatchingTest {
 
     @Test
     void shouldPartiallyFillWhenIncomingOrderVolumeIsLarger() {
-        Order buyOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(orderIdGen.next(), 100.0, 15.0, Side.SELL, instrumentScale);
+        Order buyOrder = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
+        Order sellOrder = Order.limitSell(orderIdGen.next(), 100.0, 15.0, instrumentScale);
 
         orderBook.addOrder(buyOrder);
         List<Trade> trades = orderBook.addOrder(sellOrder);
@@ -137,9 +137,9 @@ public class OrderMatchingTest {
 
     @Test
     void shouldMatchOldestOrderFirstAtSamePrice() { // price-time priority
-        Order firstBuy = new Order(orderIdGen.next(), 100.0, 5.0, Side.BUY, instrumentScale);
-        Order secondBuy = new Order(orderIdGen.next(), 100.0, 5.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(orderIdGen.next(), 100.0, 5.0, Side.SELL, instrumentScale);
+        Order firstBuy = Order.limitBuy(orderIdGen.next(), 100.0, 5.0, instrumentScale);
+        Order secondBuy = Order.limitBuy(orderIdGen.next(), 100.0, 5.0, instrumentScale);
+        Order sellOrder = Order.limitSell(orderIdGen.next(), 100.0, 5.0, instrumentScale);
 
         orderBook.addOrder(firstBuy);
         orderBook.addOrder(secondBuy);
@@ -164,15 +164,15 @@ public class OrderMatchingTest {
 
     @Test
     void shouldMatchAcrossMultipleOrdersAtSamePrice() {
-        Order firstBuy = new Order(orderIdGen.next(), 100.0, 3.0, Side.BUY, instrumentScale);
-        Order secondBuy = new Order(orderIdGen.next(), 100.0, 4.0, Side.BUY, instrumentScale);
-        Order thirdBuy = new Order(orderIdGen.next(), 100.0, 3.0, Side.BUY, instrumentScale);
+        Order firstBuy = Order.limitBuy(orderIdGen.next(), 100.0, 3.0, instrumentScale);
+        Order secondBuy = Order.limitBuy(orderIdGen.next(), 100.0, 4.0, instrumentScale);
+        Order thirdBuy = Order.limitBuy(orderIdGen.next(), 100.0, 3.0, instrumentScale);
 
         orderBook.addOrder(firstBuy);
         orderBook.addOrder(secondBuy);
         orderBook.addOrder(thirdBuy);
 
-        Order sellOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.SELL, instrumentScale);
+        Order sellOrder = Order.limitSell(orderIdGen.next(), 100.0, 10.0, instrumentScale);
 
         List<Trade> trades = orderBook.addOrder(sellOrder);
 
@@ -206,15 +206,15 @@ public class OrderMatchingTest {
 
     @Test
     void shouldMatchIncomingAskAcrossMultipleBidLevels() {
-        orderBook.addOrder(new Order(orderIdGen.next(), 100.0, 5.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 99.0, 5.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 98.0, 5.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 100.0, 5.0, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 99.0, 5.0, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 98.0, 5.0, instrumentScale));
 
         // Sell 12 should consume:
         // - 5 at 100.0 (best bid)
         // - 5 at 99.0
         // - 2 at 98.0 (partial)
-        Order sellOrder = new Order(orderIdGen.next(), 98.0, 12.0, Side.SELL, instrumentScale);
+        Order sellOrder = Order.limitSell(orderIdGen.next(), 98.0, 12.0, instrumentScale);
         List<Trade> trades = orderBook.addOrder(sellOrder);
 
         assertNotNull(trades);
@@ -248,15 +248,15 @@ public class OrderMatchingTest {
 
     @Test
     void shouldMatchIncomingBuyAcrossMultipleAskLevels() {
-        orderBook.addOrder(new Order(orderIdGen.next(), 100.0, 5.0, Side.SELL, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 101.0, 5.0, Side.SELL, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 102.0, 5.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 100.0, 5.0, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 101.0, 5.0, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 102.0, 5.0, instrumentScale));
 
         // Buy 12 should consume:
         // - 5 at 100.0 (best ask)
         // - 5 at 101.0
         // - 2 at 102.0 (partial)
-        Order buyOrder = new Order(orderIdGen.next(), 102.0, 12.0, Side.BUY, instrumentScale);
+        Order buyOrder = Order.limitBuy(orderIdGen.next(), 102.0, 12.0, instrumentScale);
         List<Trade> trades = orderBook.addOrder(buyOrder);
 
         assertNotNull(trades);
@@ -290,8 +290,8 @@ public class OrderMatchingTest {
 
     @Test
     void shouldLinkTradeToParticipatingOrders() {
-        Order buyOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.SELL, instrumentScale);
+        Order buyOrder = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
+        Order sellOrder = Order.limitSell(orderIdGen.next(), 100.0, 10.0, instrumentScale);
 
         orderBook.addOrder(buyOrder);
         List<Trade> trades = orderBook.addOrder(sellOrder);
@@ -302,5 +302,123 @@ public class OrderMatchingTest {
         assertEquals(buyOrder.getOrderId(), trade.getBuyOrderId());
         assertEquals(sellOrder.getOrderId(), trade.getSellOrderId());
     }
+    @Test
+    void shouldMatchMarketBuyAgainstBestAsk() {
+        orderBook.addOrder(Order.limitSell(
+                orderIdGen.next(), 100.0, 10.0, instrumentScale
+        ));
 
+        Order marketBuy = Order.marketBuy(orderIdGen.next(), 10.0);
+        List<Trade> trades = orderBook.addOrder(marketBuy);
+
+        assertEquals(1, trades.size());
+        assertEquals(10000L, trades.getFirst().getPrice());
+        assertEquals(10.0, trades.getFirst().getQuantity());
+        assertEquals(Double.NaN, orderBook.getBestAsk());
+        assertEquals(0.0, orderBook.getTotalVolume());
+    }
+
+    @Test
+    void shouldMatchMarketSellAgainstBestBid() {
+        orderBook.addOrder(Order.limitBuy(
+                orderIdGen.next(), 100.0, 10.0, instrumentScale
+        ));
+
+        Order marketSell = Order.marketSell(orderIdGen.next(), 10.0);
+        List<Trade> trades = orderBook.addOrder(marketSell);
+
+        assertEquals(1, trades.size());
+        assertEquals(10000L, trades.getFirst().getPrice());
+        assertEquals(10.0, trades.getFirst().getQuantity());
+        assertEquals(Double.NaN, orderBook.getBestBid());
+        assertEquals(0.0, orderBook.getTotalVolume());
+    }
+
+    @Test
+    void shouldCancelRemainingMarketOrderWhenBookEmpty() {
+        Order marketBuy = Order.marketBuy(orderIdGen.next(), 10.0);
+        List<Trade> trades = orderBook.addOrder(marketBuy);
+
+        assertTrue(trades.isEmpty());
+        assertEquals(Double.NaN, orderBook.getBestBid());
+        assertEquals(0.0, orderBook.getTotalVolume());
+        assertNull(orderBook.getOrder(marketBuy.getOrderId()));
+    }
+
+    @Test
+    void shouldPartialFillMarketOrderAndCancelRemainder() {
+        orderBook.addOrder(Order.limitSell(
+                orderIdGen.next(), 100.0, 5.0, instrumentScale
+        ));
+
+        Order marketBuy = Order.marketBuy(orderIdGen.next(), 10.0);
+        List<Trade> trades = orderBook.addOrder(marketBuy);
+
+        assertEquals(1, trades.size());
+        assertEquals(5.0, trades.getFirst().getQuantity());
+        assertEquals(Double.NaN, orderBook.getBestBid());
+        assertEquals(Double.NaN, orderBook.getBestAsk());
+        assertEquals(0.0, orderBook.getTotalVolume());
+        assertNull(orderBook.getOrder(marketBuy.getOrderId()));
+    }
+
+    @Test
+    void shouldMatchMarketOrderAcrossMultiplePriceLevels() {
+        orderBook.addOrder(Order.limitSell(
+                orderIdGen.next(), 100.0, 5.0, instrumentScale
+        ));
+        orderBook.addOrder(Order.limitSell(
+                orderIdGen.next(), 101.0, 5.0, instrumentScale
+        ));
+        orderBook.addOrder(Order.limitSell(
+                orderIdGen.next(), 102.0, 5.0, instrumentScale
+        ));
+
+        Order marketBuy = Order.marketBuy(orderIdGen.next(), 12.0);
+        List<Trade> trades = orderBook.addOrder(marketBuy);
+
+        assertEquals(3, trades.size());
+
+        assertEquals(10000L, trades.get(0).getPrice());
+        assertEquals(5.0, trades.get(0).getQuantity());
+
+        assertEquals(10100L, trades.get(1).getPrice());
+        assertEquals(5.0, trades.get(1).getQuantity());
+
+        assertEquals(10200L, trades.get(2).getPrice());
+        assertEquals(2.0, trades.get(2).getQuantity());
+
+        assertEquals(102.0, orderBook.getBestAsk());
+        assertEquals(3.0, orderBook.getTotalAskVolume());
+        assertNull(orderBook.getOrder(marketBuy.getOrderId()));
+    }
+
+    @Test
+    void shouldNotAddMarketOrderToOrderMap() {
+        Order marketBuy = Order.marketBuy(orderIdGen.next(), 10.0);
+        orderBook.addOrder(marketBuy);
+
+        assertNull(orderBook.getOrder(marketBuy.getOrderId()));
+    }
+
+    @Test
+    void shouldRejectMarketOrderModification() {
+        orderBook.addOrder(Order.limitBuy(
+                orderIdGen.next(), 100.0, 10.0, instrumentScale
+        ));
+
+        Order marketOrder = Order.marketBuy(orderIdGen.next(), 10.0);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> orderBook.modifyOrder(1L, marketOrder));
+    }
+
+    @Test
+    void shouldRejectMarketOrderCancellation() {
+        Order marketBuy = Order.marketBuy(orderIdGen.next(), 10.0);
+        orderBook.addOrder(marketBuy);
+
+        assertThrows(IllegalStateException.class,
+                () -> orderBook.cancelOrder(marketBuy.getOrderId()));
+    }
 }

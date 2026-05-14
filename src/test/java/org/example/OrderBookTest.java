@@ -23,7 +23,7 @@ public class OrderBookTest {
 
     @Test
     void shouldAddBuyOrderToBids() {
-        Order order = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
+        Order order = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
 
         orderBook.addOrder(order);
 
@@ -33,7 +33,7 @@ public class OrderBookTest {
 
     @Test
     void shouldAddSellOrderToAsks() {
-        Order order = new Order(orderIdGen.next(), 100.0, 10.0, Side.SELL, instrumentScale);
+        Order order = Order.limitSell(orderIdGen.next(), 100.0, 10.0, instrumentScale);
 
         orderBook.addOrder(order);
 
@@ -48,7 +48,7 @@ public class OrderBookTest {
 
     @Test
     void shouldGetOrderFromOrderMap() {
-        Order order = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
+        Order order = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
 
         orderBook.addOrder(order);
         Order retrievedOrder = orderBook.getOrder(order.getOrderId());
@@ -57,15 +57,15 @@ public class OrderBookTest {
 
     @Test
     void shouldNotGetNonExistingOrderFromOrderMap() {
-        Order order = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
+        Order order = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
 
         assertNull(orderBook.getOrder(order.getOrderId()));
     }
 
     @Test
     void shouldSuccessfullyCancelExistingUnmatchedOrder() {
-        Order order = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
-        Order order2 = new Order(orderIdGen.next(),101.0, 10.0, Side.SELL, instrumentScale);
+        Order order = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
+        Order order2 = Order.limitSell(orderIdGen.next(),101.0, 10.0, instrumentScale);
 
         orderBook.addOrder(order);
         orderBook.addOrder(order2);
@@ -86,7 +86,7 @@ public class OrderBookTest {
 
     @Test
     void shouldNotCancelNonExistingOrder() {
-        Order order = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
+        Order order = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
 
         assertThrows(IllegalStateException.class, () -> orderBook.cancelOrder(order.getOrderId()));
         assertThrows(IllegalArgumentException.class, () -> orderBook.cancelOrder(0));
@@ -95,30 +95,30 @@ public class OrderBookTest {
 
     @Test
     void shouldTrackBestBidsAsHighestPrice() {
-        orderBook.addOrder(new Order(orderIdGen.next(), 100.14, 10.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 90.0, 10.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 80.0, 10.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 100.14, 10.0, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 90.0, 10.0, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 80.0, 10.0, instrumentScale));
 
         assertEquals(100.14, orderBook.getBestBid());
     }
 
     @Test
     void shouldTrackBestAsksAsLowestPrice() {
-        orderBook.addOrder(new Order(orderIdGen.next(), 100.14, 10.0, Side.SELL, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 90.0, 10.0, Side.SELL, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 80.23, 10.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 100.14, 10.0, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 90.0, 10.0, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 80.23, 10.0, instrumentScale));
 
         assertEquals(80.23, orderBook.getBestAsk());
     }
 
     @Test
     void shouldTrackOrderCountAtPrice() {
-        orderBook.addOrder(new Order(orderIdGen.next(),100.0, 10.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 100.0, 20.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(),100.0, 10.0, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 100.0, 20.0, instrumentScale));
 
-        orderBook.addOrder(new Order(orderIdGen.next(), 101.0, 30.0, Side.SELL, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 101.0, 40.0, Side.SELL, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 102.0, 50.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 101.0, 30.0, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 101.0, 40.0, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 102.0, 50.0, instrumentScale));
 
 
         assertEquals(2, orderBook.getOrderCountAtPrice(100.0, Side.BUY));
@@ -128,19 +128,19 @@ public class OrderBookTest {
 
     @Test
     void shouldGetTotalVolume() {
-        orderBook.addOrder(new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 100.0, 20.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 100.0, 20.0, instrumentScale));
 
-        orderBook.addOrder(new Order(orderIdGen.next(), 101.0, 30.0, Side.SELL, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 101.0, 40.0, Side.SELL, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 102.0, 50.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 101.0, 30.0, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 101.0, 40.0, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 102.0, 50.0, instrumentScale));
 
         assertEquals(150.0, orderBook.getTotalVolume());
     }
 
     @Test
     void shouldNotAddDuplicateOrder() {
-        Order order = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
+        Order order = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
 
         orderBook.addOrder(order);
 
@@ -154,11 +154,11 @@ public class OrderBookTest {
 
     @Test
     void shouldModifyOrderPrice() {
-        Order order = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
+        Order order = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
 
         orderBook.addOrder(order);
 
-        Order modifiedOrder = new Order(orderIdGen.next(), 105.0, 10.0, Side.BUY, instrumentScale);
+        Order modifiedOrder = Order.limitBuy(orderIdGen.next(), 105.0, 10.0, instrumentScale);
 
         orderBook.modifyOrder(order.getOrderId(), modifiedOrder);
 
@@ -177,10 +177,10 @@ public class OrderBookTest {
 
     @Test
     void shouldModifyOrderQuantity() {
-        Order order = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
+        Order order = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
         orderBook.addOrder(order);
 
-        Order modifiedOrder = new Order(orderIdGen.next(), 100.0, 20.0, Side.BUY, instrumentScale);
+        Order modifiedOrder = Order.limitBuy(orderIdGen.next(), 100.0, 20.0, instrumentScale);
         orderBook.modifyOrder(order.getOrderId(), modifiedOrder);
 
         assertNull(orderBook.getOrder(order.getOrderId()));
@@ -194,17 +194,17 @@ public class OrderBookTest {
     @Test
     void shouldNotModifyNonExistingOrder() {
         long orderId = orderIdGen.next();
-        Order newOrder = new Order(orderId, 100.0, 10.0, Side.BUY, instrumentScale);
+        Order newOrder = Order.limitBuy(orderId, 100.0, 10.0, instrumentScale);
 
         assertThrows(IllegalStateException.class, () -> orderBook.modifyOrder(orderId, newOrder));
     }
 
     @Test
     void shouldNotModifyOrderWithDifferentSide() {
-        Order order = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
+        Order order = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
         orderBook.addOrder(order);
 
-        Order modifiedOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.SELL, instrumentScale);
+        Order modifiedOrder = Order.limitSell(orderIdGen.next(), 100.0, 10.0, instrumentScale);
 
         assertThrows(IllegalArgumentException.class,
                 () -> orderBook.modifyOrder(order.getOrderId(), modifiedOrder));
@@ -212,13 +212,13 @@ public class OrderBookTest {
 
     @Test
     void shouldMatchWhenModifiedOrderCrossesSpread() {
-        Order buyOrder = new Order(orderIdGen.next(), 99.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.SELL, instrumentScale);
+        Order buyOrder = Order.limitBuy(orderIdGen.next(), 99.0, 10.0, instrumentScale);
+        Order sellOrder = Order.limitSell(orderIdGen.next(), 100.0, 10.0, instrumentScale);
 
         orderBook.addOrder(buyOrder);
         orderBook.addOrder(sellOrder);
 
-        Order modifiedBuyOrder = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
+        Order modifiedBuyOrder = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
         List<Trade> trades = orderBook.modifyOrder(buyOrder.getOrderId(), modifiedBuyOrder);
 
         assertNotNull(trades);
@@ -233,12 +233,12 @@ public class OrderBookTest {
 
     @Test
     void shouldGetVolumeAtPriceLevel() {
-        orderBook.addOrder(new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 100.0, 20.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 100.0, 15.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 100.0, 20.0, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 100.0, 15.0, instrumentScale));
 
-        orderBook.addOrder(new Order(orderIdGen.next(), 101.0, 5.0, Side.SELL, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 101.0, 8.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 101.0, 5.0, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 101.0, 8.0, instrumentScale));
 
         assertEquals(45.0, orderBook.getVolumeAtPrice(100.0, Side.BUY));
         assertEquals(13.0, orderBook.getVolumeAtPrice(101.0, Side.SELL));
@@ -247,15 +247,15 @@ public class OrderBookTest {
 
     @Test
     void shouldCalculateSpread() {
-        orderBook.addOrder(new Order(orderIdGen.next(), 99.0, 10.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 101.0, 10.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 99.0, 10.0, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 101.0, 10.0, instrumentScale));
 
         assertEquals(2.0, orderBook.getSpread());
     }
 
     @Test
     void shouldReturnNaNSpreadWhenOneSideEmpty() {
-        orderBook.addOrder(new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale));
 
         assertEquals(Double.NaN, orderBook.getSpread());
     }
@@ -267,9 +267,9 @@ public class OrderBookTest {
 
     @Test
     void shouldUpdateSpreadAfterCancel() {
-        Order bid1 = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
-        Order bid2 = new Order(orderIdGen.next(), 99.0, 10.0, Side.BUY, instrumentScale);
-        Order ask = new Order(orderIdGen.next(), 101.0, 10.0, Side.SELL, instrumentScale);
+        Order bid1 = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
+        Order bid2 = Order.limitBuy(orderIdGen.next(), 99.0, 10.0, instrumentScale);
+        Order ask = Order.limitSell(orderIdGen.next(), 101.0, 10.0, instrumentScale);
 
         orderBook.addOrder(bid1);
         orderBook.addOrder(bid2);
@@ -284,13 +284,13 @@ public class OrderBookTest {
 
     @Test
     void shouldGetBookDepth() {
-        orderBook.addOrder(new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 100.0, 5.0, Side.BUY, instrumentScale));  // same level
-        orderBook.addOrder(new Order(orderIdGen.next(), 99.0, 10.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 98.0, 10.0, Side.BUY, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 100.0, 5.0, instrumentScale));  // same level
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 99.0, 10.0, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 98.0, 10.0, instrumentScale));
 
-        orderBook.addOrder(new Order(orderIdGen.next(), 101.0, 10.0, Side.SELL, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 102.0, 10.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 101.0, 10.0, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 102.0, 10.0, instrumentScale));
 
         assertEquals(3, orderBook.getDepth(Side.BUY));
         assertEquals(2, orderBook.getDepth(Side.SELL));
@@ -304,8 +304,8 @@ public class OrderBookTest {
 
     @Test
     void shouldUpdateDepthAfterCancel() {
-        Order order1 = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
-        Order order2 = new Order(orderIdGen.next(), 99.0, 10.0, Side.BUY, instrumentScale);
+        Order order1 = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
+        Order order2 = Order.limitBuy(orderIdGen.next(), 99.0, 10.0, instrumentScale);
 
         orderBook.addOrder(order1);
         orderBook.addOrder(order2);
@@ -319,9 +319,9 @@ public class OrderBookTest {
 
     @Test
     void shouldTrackTotalTradeCount() {
-        Order order1 = new Order(orderIdGen.next(), 100.0, 10.0, Side.BUY, instrumentScale);
-        Order order2 = new Order(orderIdGen.next(), 100.0, 5.0, Side.SELL, instrumentScale);
-        Order order3 = new Order(orderIdGen.next(), 100.0, 5.0, Side.SELL, instrumentScale);
+        Order order1 = Order.limitBuy(orderIdGen.next(), 100.0, 10.0, instrumentScale);
+        Order order2 = Order.limitSell(orderIdGen.next(), 100.0, 5.0, instrumentScale);
+        Order order3 = Order.limitSell(orderIdGen.next(), 100.0, 5.0, instrumentScale);
         orderBook.addOrder(order1);
         orderBook.addOrder(order2);
         orderBook.addOrder(order3);
@@ -331,8 +331,8 @@ public class OrderBookTest {
 
     @Test
     void shouldTrackZeroTradesWhenNoMatches() {
-        orderBook.addOrder(new Order(orderIdGen.next(), 99.0, 10.0, Side.BUY, instrumentScale));
-        orderBook.addOrder(new Order(orderIdGen.next(), 101.0, 10.0, Side.SELL, instrumentScale));
+        orderBook.addOrder(Order.limitBuy(orderIdGen.next(), 99.0, 10.0, instrumentScale));
+        orderBook.addOrder(Order.limitSell(orderIdGen.next(), 101.0, 10.0, instrumentScale));
 
         assertEquals(0, orderBook.getTradeCounts());
     }
@@ -351,8 +351,8 @@ public class OrderBookTest {
 
     @Test
     void shouldReturnEmptyTradesWhenNoMatch() {
-        Order buyOrder = new Order(orderIdGen.next(), 99.0, 10.0, Side.BUY, instrumentScale);
-        Order sellOrder = new Order(orderIdGen.next(), 101.0, 10.0, Side.SELL, instrumentScale);
+        Order buyOrder = Order.limitBuy(orderIdGen.next(), 99.0, 10.0, instrumentScale);
+        Order sellOrder = Order.limitSell(orderIdGen.next(), 101.0, 10.0, instrumentScale);
 
         List<Trade> trades1 = orderBook.addOrder(buyOrder);
         List<Trade> trades2 = orderBook.addOrder(sellOrder);

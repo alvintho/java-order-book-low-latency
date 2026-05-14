@@ -35,6 +35,12 @@ public class OrderBook {
             throw new IllegalArgumentException("Order cannot be null");
         }
 
+        // Market Order Path
+        if (order.isMarket()) {
+            return this.matchMarketOrder(order);
+        }
+
+        // Limit order path
         if (orderMap.containsKey(order.getOrderId())) {
             throw new IllegalStateException("Order " + order.getOrderId() + " already exists");
         }
@@ -70,6 +76,11 @@ public class OrderBook {
     public List<Trade> modifyOrder(long orderId, Order modifiedOrder) {
         if (modifiedOrder == null) {
             throw new IllegalArgumentException("Order cannot be null");
+        }
+
+        if (modifiedOrder.isMarket()) {
+            throw new IllegalArgumentException(
+                    "Cannot modify to a market order");
         }
 
         Order existingOrder = this.orderMap.get(orderId);
@@ -123,11 +134,63 @@ public class OrderBook {
         }
     }
 
+    private List<Trade> matchMarketOrder(Order incomingOrder) {
+        TreeMap<Long, Queue<Order>> oppositeBook = incomingOrder.isBid() ? asks : bids;
+        List<Trade> trades = null;
+
+        while (!oppositeBook.isEmpty() && !incomingOrder.isFilled()) {
+            Long bestOppositePrice = oppositeBook.firstKey();
+
+            Queue<Order> ordersAtBestPrice = oppositeBook.get(bestOppositePrice);
+
+            if (ordersAtBestPrice == null || ordersAtBestPrice.isEmpty()) {
+                oppositeBook.remove(bestOppositePrice);
+                continue;
+            }
+
+            if (trades == null) {
+                trades = new ArrayList<>(4);
+            }
+
+            Order restingOrder = ordersAtBestPrice.peek();
+            double tradeQuantity =
+                    Math.min(incomingOrder.getQuantity(), restingOrder.getQuantity());
+
+            incomingOrder.reduceQuantity(tradeQuantity);
+            restingOrder.reduceQuantity(tradeQuantity);
+
+            removeVolume(tradeQuantity, restingOrder.getSide());
+
+            if (restingOrder.isFilled()) {
+                this.removeOrderFromBook(restingOrder);
+            }
+
+            long buyOrderId = incomingOrder.isBid()
+                    ? incomingOrder.getOrderId()
+                    : restingOrder.getOrderId();
+            long sellOrderId = incomingOrder.isBid()
+                    ? restingOrder.getOrderId()
+                    : incomingOrder.getOrderId();
+
+            trades.add(new Trade(
+                    tradeIdGen.next(),
+                    bestOppositePrice,
+                    tradeQuantity,
+                    buyOrderId,
+                    sellOrderId
+            ));
+            this.tradeCount += 1;
+        }
+
+        // Market order NEVER rests — unfilled quantity is cancelled
+        return trades == null ? NO_TRADES : trades;
+    }
+
     private List<Trade> matchOrder(Order incomingOrder) {
         TreeMap<Long, Queue<Order>> oppositeBook = incomingOrder.isBid() ? asks : bids;
-        List<Trade> trades = null;                              // ← CHANGED: was new ArrayList<>()
+        List<Trade> trades = null;
 
-        long incomingOrderPrice = incomingOrder.getPrice();     // ← CHANGED: was double
+        long incomingOrderPrice = incomingOrder.getPrice();
 
         while(!oppositeBook.isEmpty() && !incomingOrder.isFilled()) {
             Long bestOppositePrice = oppositeBook.firstKey();
@@ -145,9 +208,9 @@ public class OrderBook {
                 continue;
             }
 
-            if (trades == null) {                               // ← ADDED: lazy init
-                trades = new ArrayList<>(4);                    // ← ADDED
-            }                                                   // ← ADDED
+            if (trades == null) {
+                trades = new ArrayList<>(4);
+            }
 
             Order restingOrder = ordersAtBestPrice.peek();
             double tradeQuantity = Math.min(incomingOrder.getQuantity(), restingOrder.getQuantity());
@@ -179,7 +242,7 @@ public class OrderBook {
             this.tradeCount += 1;
         }
 
-        return trades == null ? NO_TRADES : trades;             // ← CHANGED: was return trades
+        return trades == null ? NO_TRADES : trades;
     }
 
     public double getTotalBidVolume() {
