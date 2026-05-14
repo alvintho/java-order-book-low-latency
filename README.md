@@ -93,14 +93,14 @@ Market orders (always match)	        28.2 ± 0.4	        368.6	        10K order
 
 ```aiignore
                             (Baseline)
-Benchmark               │ UUID+LinkedList │ Long+ArrayDeque │ +LazyTradeList  │ +MarketOrders   │ vs Baseline
-────────────────────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────┼──────────────────
-ingest100KOrders (ns)   │ 233.8 ± 6.2     │ 113.3 ± 0.7     │ 115.6 ± 0.7     │ 113.5 ± 1.4     │ 51.4% faster
-ingest100KOrders (B/op) │ 716.0           │ 477.2           │ 453.5           │ 469.5           │ -246.5 (34.4%)
-ingest100KNoMatch (ns)  │ 71.1 ± 3.1      │ 31.9 ± 0.1      │ 28.2 ± 1.0      │ 27.7 ± 0.4      │ 61.0% faster
-ingest100KNoMatch (B/op)│ 485.1           │ 267.9           │ 243.9           │ 259.9           │ -225.2 (46.4%)
-ingest10KMarket (ns)    │      —          │      —          │      —          │ 28.2 ± 0.4      │ new metric
-ingest10KMarket (B/op)  │      —          │      —          │      —          │ 368.6           │ new metric
+Benchmark                │ UUID+LinkedList │ Long+ArrayDeque │ +LazyTradeList  │ +MarketOrders   │ vs Baseline
+─────────────────────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────┼──────────────────
+ingest100KOrders (ns/op) │ 233.8 ± 6.2     │ 113.3 ± 0.7     │ 115.6 ± 0.7     │ 113.5 ± 1.4     │ 51.4% faster
+ingest100KOrders (B/op)  │ 716.0           │ 477.2           │ 453.5           │ 469.5           │ -246.5 (34.4%)
+ingest100KNoMatch (ns/op)│ 71.1 ± 3.1      │ 31.9 ± 0.1      │ 28.2 ± 1.0      │ 27.7 ± 0.4      │ 61.0% faster
+ingest100KNoMatch (B/op) │ 485.1           │ 267.9           │ 243.9           │ 259.9           │ -225.2 (46.4%)
+ingest10KMarket (ns/op)  │      —          │      —          │      —          │ 28.2 ± 0.4      │ new metric
+ingest10KMarket (B/op)   │      —          │      —          │      —          │ 368.6           │ new metric
 ```
 
 ## 1. UUID --> Monotonic Long IDs
