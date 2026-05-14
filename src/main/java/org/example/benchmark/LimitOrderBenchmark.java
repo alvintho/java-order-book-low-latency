@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 10, time = 1)
 @Fork(2)
-public class OrderBookBenchmark {
+public class LimitOrderBenchmark {
 
     private static final int BATCH_SIZE = 100_000;
     private IdGenerator orderIdGen;
@@ -90,9 +90,7 @@ public class OrderBookBenchmark {
     }
 
     /**
-     * Realistic benchmark: mixed orders with matching.
      * Measures: insertion + matching + trade creation + volume bookkeeping.
-     * Dead Code Elimination (DCE) safe
      * The JIT cannot delete the addOrder calls because returned trades are consumed
      */
     @Benchmark
@@ -105,6 +103,7 @@ public class OrderBookBenchmark {
         bh.consume(orderBook);
     }
 
+    // Measures: pure insertion cost (TreeMap + HashMap)
     @Benchmark
     @OperationsPerInvocation(BATCH_SIZE)
     public void ingest100KNoMatchOrders(Blackhole bh) {
