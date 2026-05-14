@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 1180" width="1100" height="1100">
+  <rect width="100%" height="100%" fill="white"/>
+    <!-- Arrow marker definitions -->
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#3a5a8c" />
+      </marker>
+      <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f8a4c" />
+      </marker>
+      <marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#c97a1a" />
+      </marker>
+
+      <linearGradient id="gStart" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#4f7cc9"/>
+        <stop offset="1" stop-color="#2f5aa8"/>
+      </linearGradient>
+      <linearGradient id="gProcess" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#6a8fd6"/>
+        <stop offset="1" stop-color="#4a72b8"/>
+      </linearGradient>
+      <linearGradient id="gMarket" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#e89a52"/>
+        <stop offset="1" stop-color="#c97a1a"/>
+      </linearGradient>
+      <linearGradient id="gLimit" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#5cb88a"/>
+        <stop offset="1" stop-color="#1f8a4c"/>
+      </linearGradient>
+      <linearGradient id="gMatch" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#9b6dd0"/>
+        <stop offset="1" stop-color="#6e44a8"/>
+      </linearGradient>
+      <linearGradient id="gFull" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#5db8b0"/>
+        <stop offset="1" stop-color="#2c8a82"/>
+      </linearGradient>
+      <linearGradient id="gPartial" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#d68a8a"/>
+        <stop offset="1" stop-color="#a84a4a"/>
+      </linearGradient>
+
+      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#1a2b4a" flood-opacity="0.18"/>
+      </filter>
+    </defs>
+
+    <style>
+      .nodeText { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; fill: white; font-weight: 600; }
+      .title    { font-size: 15px; }
+      .sub      { font-size: 12px; font-weight: 500; opacity: 0.95; }
+      .code     { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 11.5px; fill: #fff; opacity: 0.96; }
+      .branchLbl{ font-family: -apple-system, sans-serif; font-size: 12.5px; font-weight: 700; fill: #34465f; }
+      .pathLine { fill: none; stroke: #3a5a8c; stroke-width: 2; }
+      .pathGreen{ fill: none; stroke: #1f8a4c; stroke-width: 2; }
+      .pathOrange{fill: none; stroke: #c97a1a; stroke-width: 2; }
+    </style>
+
+    <!-- 1. ORDER CREATED -->
+    <g filter="url(#shadow)">
+      <rect x="390" y="20" width="400" height="90" rx="12" fill="url(#gStart)"/>
+      <text x="590" y="48" text-anchor="middle" class="nodeText title">① Order Created</text>
+      <text x="590" y="72" text-anchor="middle" class="code">Order.limitBuy(id, price, qty, scale)</text>
+      <text x="590" y="92" text-anchor="middle" class="code">Order.marketBuy(id, qty)</text>
+    </g>
+    <path class="pathLine" d="M590 110 L590 150" marker-end="url(#arrow)"/>
+
+    <!-- 2. ORDERBOOK.ADDORDER -->
+    <g filter="url(#shadow)">
+      <rect x="420" y="155" width="340" height="60" rx="12" fill="url(#gProcess)"/>
+      <text x="590" y="180" text-anchor="middle" class="nodeText title">② OrderBook.addOrder()</text>
+      <text x="590" y="200" text-anchor="middle" class="sub">Routes order based on type</text>
+    </g>
+
+    <!-- Split lines to MARKET / LIMIT -->
+    <path class="pathLine" d="M590 215 L590 240 L230 240 L230 280" marker-end="url(#arrowOrange)" stroke="#c97a1a"/>
+    <path class="pathLine" d="M590 215 L590 240 L950 240 L950 280" marker-end="url(#arrowGreen)" stroke="#1f8a4c"/>
+
+    <text x="380" y="232" text-anchor="middle" class="branchLbl" fill="#c97a1a">MARKET order</text>
+    <text x="800" y="232" text-anchor="middle" class="branchLbl" fill="#1f8a4c">LIMIT order</text>
+
+    <!-- 3a. MARKET branch -->
+    <g filter="url(#shadow)">
+      <rect x="60" y="285" width="340" height="80" rx="12" fill="url(#gMarket)"/>
+      <text x="230" y="313" text-anchor="middle" class="nodeText title">Match only — never rests</text>
+      <text x="230" y="335" text-anchor="middle" class="sub">Consume liquidity from opposite side</text>
+      <text x="230" y="353" text-anchor="middle" class="sub">Unmatched remainder is cancelled</text>
+    </g>
+
+    <!-- 3b. LIMIT branch -->
+    <g filter="url(#shadow)">
+      <rect x="780" y="285" width="340" height="80" rx="12" fill="url(#gLimit)"/>
+      <text x="950" y="313" text-anchor="middle" class="nodeText title">Insert into book</text>
+      <text x="950" y="335" text-anchor="middle" class="sub">+ orderMap registration</text>
+      <text x="950" y="353" text-anchor="middle" class="sub">+ update volume tracking</text>
+    </g>
+
+    <!-- LIMIT → Attempt matching -->
+    <path class="pathGreen" d="M950 365 L950 410" marker-end="url(#arrowGreen)"/>
+    <g filter="url(#shadow)">
+      <rect x="780" y="415" width="340" height="80" rx="12" fill="url(#gLimit)"/>
+      <text x="950" y="443" text-anchor="middle" class="nodeText title">Attempt matching</text>
+      <text x="950" y="465" text-anchor="middle" class="sub">against opposite side of book</text>
+      <text x="950" y="483" text-anchor="middle" class="sub">(price-time priority)</text>
+    </g>
+
+    <!-- Both branches converge into "For each match" -->
+    <path class="pathOrange" d="M230 365 L230 540 L420 540" marker-end="url(#arrow)" stroke="#c97a1a"/>
+    <path class="pathGreen"  d="M950 495 L950 540 L760 540" marker-end="url(#arrow)" stroke="#1f8a4c"/>
+
+    <!-- 4. FOR EACH MATCH -->
+    <g filter="url(#shadow)">
+      <rect x="370" y="510" width="440" height="170" rx="12" fill="url(#gMatch)"/>
+      <text x="590" y="540" text-anchor="middle" class="nodeText title">③ For each match</text>
+      <line x1="410" y1="552" x2="770" y2="552" stroke="white" stroke-opacity="0.4" stroke-width="1"/>
+      <text x="400" y="578" class="nodeText sub">1.  Reduce both order quantities</text>
+      <text x="400" y="602" class="nodeText sub">2.  Update volume tracking</text>
+      <text x="400" y="626" class="nodeText sub">3.  Remove fully-filled orders</text>
+      <text x="400" y="650" class="nodeText sub">4.  Create Trade object</text>
+      <text x="590" y="672" text-anchor="middle" class="sub" style="font-style:italic; opacity:0.85">→ emit trade event</text>
+    </g>
+
+    <!-- Down to outcome split -->
+    <path class="pathLine" d="M590 680 L590 720" marker-end="url(#arrow)"/>
+
+    <!-- Decision diamond -->
+    <g filter="url(#shadow)">
+      <polygon points="590,725 760,800 590,875 420,800"
+               fill="#ffffff" stroke="#3a5a8c" stroke-width="2"/>
+      <text x="590" y="795" text-anchor="middle" class="branchLbl" style="font-size:14px">Order fill</text>
+      <text x="590" y="815" text-anchor="middle" class="branchLbl" style="font-size:14px">status?</text>
+    </g>
+
+    <!-- Branch lines -->
+    <path class="pathLine" d="M420 800 L260 800 L260 920" marker-end="url(#arrow)"/>
+    <path class="pathLine" d="M760 800 L920 800 L920 920" marker-end="url(#arrow)"/>
+
+    <text x="320" y="792" text-anchor="middle" class="branchLbl">Fully filled</text>
+    <text x="860" y="792" text-anchor="middle" class="branchLbl">Partially filled</text>
+
+    <!-- 5a. Fully filled -->
+    <g filter="url(#shadow)">
+      <rect x="80" y="925" width="360" height="100" rx="12" fill="url(#gFull)"/>
+      <text x="260" y="955" text-anchor="middle" class="nodeText title">✓ Remove from book + map</text>
+      <text x="260" y="980" text-anchor="middle" class="sub">Order is complete</text>
+      <text x="260" y="1002" text-anchor="middle" class="sub">Cleanup all references</text>
+    </g>
+
+    <!-- 5b. Partially filled (split for LIMIT vs MARKET) -->
+    <g filter="url(#shadow)">
+      <rect x="740" y="925" width="360" height="100" rx="12" fill="url(#gPartial)"/>
+      <text x="920" y="955" text-anchor="middle" class="nodeText title">↻ Partial fill handling</text>
+      <text x="920" y="980" text-anchor="middle" class="sub">LIMIT: remainder rests in book</text>
+      <text x="920" y="1002" text-anchor="middle" class="sub">MARKET: remainder is cancelled</text>
+    </g>
+
+    <!-- Footer note -->
+    <g>
+      <rect x="340" y="1075" width="500" height="60" rx="10" fill="#eef2f9" stroke="#c8d3e6"/>
+      <text x="590" y="1100" text-anchor="middle" class="branchLbl" style="font-size:13px">
+        Trades flow downstream → settlement / market data feed
+      </text>
+      <text x="590" y="1120" text-anchor="middle" class="branchLbl" style="font-weight:500; fill:#5a6a85; font-size:12px">
+        Book state is updated atomically per incoming order
+      </text>
+    </g>
+  </svg>

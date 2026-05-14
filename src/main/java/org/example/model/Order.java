@@ -1,4 +1,6 @@
-package org.example;
+package org.example.model;
+
+import org.example.util.Price;
 
 public class Order {
     private final long orderId;

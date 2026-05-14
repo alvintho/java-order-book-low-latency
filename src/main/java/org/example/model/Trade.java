@@ -1,4 +1,4 @@
-package org.example;
+package org.example.model;
 
 public class Trade {
     private final long tradeId;

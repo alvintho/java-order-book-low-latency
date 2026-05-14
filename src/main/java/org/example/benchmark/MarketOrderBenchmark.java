@@ -1,6 +1,10 @@
 package org.example.benchmark;
 
-import org.example.*;
+import org.example.engine.OrderBook;
+import org.example.model.Instrument;
+import org.example.model.Order;
+import org.example.model.Side;
+import org.example.util.IdGenerator;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 

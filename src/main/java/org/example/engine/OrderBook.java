@@ -1,4 +1,11 @@
-package org.example;
+package org.example.engine;
+
+import org.example.util.IdGenerator;
+import org.example.util.Price;
+import org.example.model.Instrument;
+import org.example.model.Order;
+import org.example.model.Side;
+import org.example.model.Trade;
 
 import java.util.*;
 
