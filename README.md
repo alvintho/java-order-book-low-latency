@@ -26,17 +26,17 @@ Currently Covering LIMIT ORDERS and MARKET ORDERS.
 
 ```aiignore
 Type	Has Price	Rests in Book	    Behaviour
-LIMIT	  ✅	              ✅	    Matches at limit price or better, rests remainder
-MARKET	  ❌	              ❌	    Matches any available price, cancels remainder
+LIMIT	  ✅	         ✅	            Matches at limit price or better, rests remainder
+MARKET	  ❌	         ❌	            Matches any available price, cancels remainder
 ```
 
 ## Order Operations
 
 ```aiignore
-Operation	Description	                       Time Complexity
-Add	        Insert order, attempt matching	        O(log P + M)
-Cancel	        Remove resting order from book       	O(log P)
-Modify	        Cancel + re-add (loses time priority)	O(log P + M)
+Operation	 Description	                            Time Complexity
+Add	         Insert order, attempt matching	            O(log P + M)
+Cancel	     Remove resting order from book       	    O(log P)
+Modify	     Cancel + re-add (loses time priority)	    O(log P + M)
 ```
 P = number of price levels, M = number of matches
 
@@ -50,13 +50,13 @@ P = number of price levels, M = number of matches
 ## Book Queries
 
 ```aiignore
-Query	             Description	                Complexity
-Best Bid/Ask	     Top of book	                    O(1)*
-Spread	             Best ask − best bid	            O(1)*
+Query	             Description	                      Complexity
+Best Bid/Ask	     Top of book	                        O(1)*
+Spread	             Best ask − best bid	                O(1)*
 Depth	             Number of price levels per side	    O(1)
 Volume at Price	     Sum of quantities at a price level	    O(K)
-Total Volume	     Aggregate across all levels	    O(1)
-Trade Count	     Total trades executed	            O(1)
+Total Volume	     Aggregate across all levels	        O(1)
+Trade Count	         Total trades executed	                O(1)
 ```
 O(1) amortised — TreeMap.firstKey() is O(log P) worst case
 
@@ -82,10 +82,10 @@ O(1) amortised — TreeMap.firstKey() is O(log P) worst case
 - Methodology: 5 warmup iterations, 10 measurement iterations, 2 forks
 
 ```aiignore
-Benchmark	                        Latency (ns/op)	     Alloc (B/op)	Description
+Benchmark	                        Latency (ns/op)	    Alloc (B/op)	Description
 Limit orders (mixed, with match)	113.5 ± 1.4	        469.5	        100K orders, ~50% match rate
-Limit orders (insertion only)	        27.7 ± 0.4	        259.9	        100K orders, zero matches
-Market orders (always match)	        28.2 ± 0.4	        368.6	        10K orders vs deep book
+Limit orders (insertion only)	    27.7 ± 0.4	        259.9	        100K orders, zero matches
+Market orders (always match)	    28.2 ± 0.4	        368.6	        10K orders vs deep book
 ```
 # Optimisation Journey
 
