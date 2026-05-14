@@ -14,10 +14,10 @@ Currently Covering LIMIT ORDERS and MARKET ORDERS.
 - [Performance](#performance)
 - [Optimisation Journey](#optimisation-journey)
 - [Project Structure](#project-structure)
-- [Running](#running)
+- [Running Execution](#running-execution)
 
 
-# 1. Architecture Overview
+# Architecture Overview
 
 ![architecture_diagram.svg](architecture_diagram.svg)
 
