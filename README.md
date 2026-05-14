@@ -191,7 +191,7 @@ src/test/java/org/example/
 
 ## Tests
 ```aiignore
-mvn tests
+mvn test
 ```
 
 ## Benchmarks
