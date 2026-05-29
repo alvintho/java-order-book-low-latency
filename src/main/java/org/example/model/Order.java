@@ -2,6 +2,11 @@ package org.example.model;
 
 import org.example.util.Price;
 
+// TODO: Native modify --> cancel, reject, priority shift (Done remove modify Order function)
+// TODO: Interfaces --> abstract the Orderbook
+// TODO: Not using OrderType
+// TODO: Re-evaluate buyOrderId and sellOrderId with FIX
+
 public class Order {
     private final long orderId;
     private final long price;

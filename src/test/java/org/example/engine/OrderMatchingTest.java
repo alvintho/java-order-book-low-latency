@@ -407,18 +407,6 @@ public class OrderMatchingTest {
     }
 
     @Test
-    void shouldRejectMarketOrderModification() {
-        orderBook.addOrder(Order.limitBuy(
-                orderIdGen.next(), 100.0, 10.0, instrumentScale
-        ));
-
-        Order marketOrder = Order.marketBuy(orderIdGen.next(), 10.0);
-
-        assertThrows(IllegalArgumentException.class,
-                () -> orderBook.modifyOrder(1L, marketOrder));
-    }
-
-    @Test
     void shouldRejectMarketOrderCancellation() {
         Order marketBuy = Order.marketBuy(orderIdGen.next(), 10.0);
         orderBook.addOrder(marketBuy);

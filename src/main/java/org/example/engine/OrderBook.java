@@ -80,29 +80,6 @@ public class OrderBook {
         this.removeVolume(order.getQuantity(), order.getSide());
     }
 
-    public List<Trade> modifyOrder(long orderId, Order modifiedOrder) {
-        if (modifiedOrder == null) {
-            throw new IllegalArgumentException("Order cannot be null");
-        }
-
-        if (modifiedOrder.isMarket()) {
-            throw new IllegalArgumentException(
-                    "Cannot modify to a market order");
-        }
-
-        Order existingOrder = this.orderMap.get(orderId);
-        if (existingOrder == null) {
-            throw new IllegalStateException("Order " + orderId + " not found");
-        }
-
-        if (existingOrder.getSide() != modifiedOrder.getSide()) {
-            throw new IllegalArgumentException("Cannot modify order of different side");
-        }
-
-        this.cancelOrder(existingOrder.getOrderId());
-        return this.addOrder(modifiedOrder);
-    }
-
     private void removeOrderFromBook(Order order) {
         /*
          * 1. Get the book
