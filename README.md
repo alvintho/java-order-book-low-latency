@@ -1,209 +1,72 @@
 # Order Book Engine
+**A FIX 4.4 Aligned Order Book Implementation**
 
-A high-performance order book matching engine built in Java 21,
-designed with TDD methodology and optimised for low-latency execution.
+This document serves as the technical summary and presentation guide for the Matching Engine. It describes the architecture, business logic, and design decisions used to build a low-latency, deterministic trading system.
 
-Currently Covering LIMIT ORDERS and MARKET ORDERS.
+---
 
-## Table of Contents
+## 1. Project Scope
+The goal of this system is to provide a robust, in-memory matching engine that handles the lifecycle of tradeable instruments and orders with high precision.
 
-- [Architecture Overview](#architecture-overview)
-- [Features](#features)
-- [Order Lifecycle](#order-lifecycle)
-- [Matching Engine Sequence Diagram](#matching-engine-sequence-diagram)
-- [Performance](#performance)
-- [Optimisation Journey](#optimisation-journey)
-- [Project Structure](#project-structure)
-- [Running Execution](#running-execution)
+*   **Standardization:** Fully aligned with **FIX 4.4 Protocol** specifications for `NewOrderSingle` and `ExecutionReport`.
+*   **Multi-Symbol Support:** Independent order books managed via a centralized `OrderBookRegistry`.
+*   **Order Capabilities:**
+    *   **Order Types:** Market and Limit orders.
+    *   **Time-In-Force (TIF):** GTC (Good 'Til Canceled), IOC (Immediate or Cancel), and FOK (Fill or Kill).
+*   **Precision:** Eliminates floating-point rounding errors by utilizing **scaled-integer pricing** (converting doubles to longs).
 
+---
 
-# Architecture Overview
+## 2. Core Business Logic
+The engine implements a strict **Price-Time Priority (FIFO)** matching algorithm.
 
-![architecture_diagram.svg](architecture_diagram.svg)
+### Matching Rules
+1.  **Bids (Buy Side):** Highest price takes priority. For identical prices, the order that arrived first is executed first.
+2.  **Asks (Sell Side):** Lowest price takes priority. For identical prices, the order that arrived first is executed first.
+3.  **Execution:** When an incoming order's price overlaps with the opposite side (Buy $\ge$ Ask or Sell $\le$ Bid), a `Trade` is generated and the quantity is deducted from both parties.
 
-# Features
-## Order Types
+### Time-In-Force (TIF) Handling
+| TIF | Behavior |
+| :--- | :--- |
+| **GTC** | Rests in the book until fully filled or manually canceled. |
+| **IOC** | Matches immediately against available liquidity; any remaining quantity is canceled. |
+| **FOK** | "All or nothing." If the full quantity cannot be filled immediately, the order is rejected. |
 
-```aiignore
-Type	Has Price	Rests in Book	    Behaviour
-LIMIT	  ✅	         ✅	            Matches at limit price or better, rests remainder
-MARKET	  ❌	         ❌	            Matches any available price, cancels remainder
-```
+---
 
-## Order Operations
+## 3. Design Patterns & Justification
+To ensure maintainability and scalability, several industry-standard design patterns were employed:
 
-```aiignore
-Operation	 Description	                            Time Complexity
-Add	         Insert order, attempt matching	            O(log P + M)
-Cancel	     Remove resting order from book       	    O(log P)
-Modify	     Cancel + re-add (loses time priority)	    O(log P + M)
-```
-P = number of price levels, M = number of matches
+| Pattern | Component | Justification |
+| :--- | :--- | :--- |
+| **Adapter** | `FixOrderAdapter` | Decouples raw FIX wire formats from the Domain Model, allowing the engine to remain transport-agnostic. |
+| **Observer** | `ExecutionReportPublisher` | Decouples the engine from downstream systems (Risk, OMS, UI). The engine emits events without knowing the consumers. |
+| **Builder** | `Order.Builder` | Ensures complex order objects are constructed in a valid state and supports immutable snapshotting for reports. |
+| **Registry** | `OrderBookRegistry` | Routes orders to the correct symbol-specific book and manages the lifecycle of multiple instruments. |
+| **Value Object** | `Trade`, `Instrument` | Uses immutability to ensure thread-safety and data integrity across the system. |
 
-## Matching Rules
+---
 
-- Price-Time Priority: best price first, then earliest order at same price
-- Limit Orders: bid price ≥ ask price triggers match
-- Market Orders: match against any resting price, sweep through levels
-- Partial Fills: supported — remainder stays (limit) or cancels (market)
+## 4. Order Flow (Sequence)
+Below is the logical flow from the moment a client submits a request to the final execution report.
 
-## Book Queries
+![OrderFlowDiagram .png](OrderFlowDiagram.png)
 
-```aiignore
-Query	             Description	                      Complexity
-Best Bid/Ask	     Top of book	                        O(1)*
-Spread	             Best ask − best bid	                O(1)*
-Depth	             Number of price levels per side	    O(1)
-Volume at Price	     Sum of quantities at a price level	    O(K)
-Total Volume	     Aggregate across all levels	        O(1)
-Trade Count	         Total trades executed	                O(1)
-```
-O(1) amortised — TreeMap.firstKey() is O(log P) worst case
+---
 
-# Order Lifecycle
+## 5. Technical Architecture
+The system is structured to separate concerns between the "Wire" (FIX), the "Routing" (Registry), and the "Execution" (Order Book).
 
-![order_flow_diagram.svg](order_flow_diagram.svg)
+### Class Relationships
+*   **`OrderBookRegistry`** $\rightarrow$ Manages a Map of `BaseOrderBook` implementations.
+*   **`BaseOrderBook`** $\rightarrow$ Interface defining the matching API.
+*   **`PriceTimePriorityOrderBook`** $\rightarrow$ Concrete implementation using `TreeMap` (for price levels) and `ArrayDeque` (for time priority).
+*   **`Order`** $\rightarrow$ The central domain entity tracking `leavesQty`, `cumQty`, and `avgPx`.
+*   **`Price` Utility** $\rightarrow$ Handles the conversion between `double` (UI) and `long` (Engine).
 
-# Matching Engine Sequence Diagram
+---
 
-## Limit Order -- Full Match
-![limit_order_sequence_diagram.svg](limit_order_match_sequence_diagram.svg)
-# Market Order -- Multi-Level Sweep
-
-![market_order_sequence_diagram.svg](market_order_sequence_diagram.svg)
-
-
-# Performance
-
-## Environment
-- JDK: OpenJDK 21.0.4 (Temurin)
-- JMH: 1.37
-- Hardware: Apple Silicon M3 PRO (single-threaded)
-- Methodology: 5 warmup iterations, 10 measurement iterations, 2 forks
-
-```aiignore
-Benchmark	                        Latency (ns/op)	    Alloc (B/op)	Description
-Limit orders (mixed, with match)	113.5 ± 1.4	        469.5	        100K orders, ~50% match rate
-Limit orders (insertion only)	    27.7 ± 0.4	        259.9	        100K orders, zero matches
-Market orders (always match)	    28.2 ± 0.4	        368.6	        10K orders vs deep book
-```
-# Optimisation Journey
-
-## Latency & Memory Optimizations Dashboard
-
-```aiignore
-                            (Baseline)
-Benchmark                │ UUID+LinkedList │ Long+ArrayDeque │ +LazyTradeList  │ +MarketOrders   │ vs Baseline
-─────────────────────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────┼──────────────────
-ingest100KOrders (ns/op) │ 233.8 ± 6.2     │ 113.3 ± 0.7     │ 115.6 ± 0.7     │ 113.5 ± 1.4     │ 51.4% faster
-ingest100KOrders (B/op)  │ 716.0           │ 477.2           │ 453.5           │ 469.5           │ -246.5 (34.4%)
-ingest100KNoMatch (ns/op)│ 71.1 ± 3.1      │ 31.9 ± 0.1      │ 28.2 ± 1.0      │ 27.7 ± 0.4      │ 61.0% faster
-ingest100KNoMatch (B/op) │ 485.1           │ 267.9           │ 243.9           │ 259.9           │ -225.2 (46.4%)
-ingest10KMarket (ns/op)  │      —          │      —          │      —          │ 28.2 ± 0.4      │ new metric
-ingest10KMarket (B/op)   │      —          │      —          │      —          │ 368.6           │ new metric
-```
-
-## 1. UUID --> Monotonic Long IDs
-
-https://github.com/alvintho/hft-low-latency-order-book/pull/18
-
-Problem: UUIDBenchmark operation is a significant portion of the ingest orders benchmark. UUID.randomUUID() calls SecureRandom, which is cryptographically
-secure but involves kernel entropy and internal synchronisation. Each call
-allocates a 128-bit object (~128 B including internal byte[16]).
-
-Solution: Monotonic long counter via IdGenerator. Zero allocation,
-zero contention, zero syscall. In production exchanges, order IDs are always
-sequencer-assigned longs — never random UUIDs.
-
-Design decision: IDs are caller-provided, not self-generated. The Order
-object doesn't own its identity — the gateway/sequencer does.
-
-## 2. LinkedList → ArrayDeque
-
-Problem: LinkedList allocates a Node object (24 bytes) per insertion.
-Nodes are scattered in heap memory, causing cache misses during traversal.
-
-Solution: ArrayDeque uses a contiguous backing array. No per-element
-allocation. Cache-friendly sequential access. Same O(1) peek()/poll()
-contract.
-
-Key insight: The timing improvement was marginal, but variance dropped
-dramatically. Assumption: predictable latency matters more than average latency due to production stability.
-A system with 100ns ± 0.1ns is preferable to 95ns ± 50ns.
-
-
-## 3. Lazy Trade List Allocation
-
-https://github.com/alvintho/java-order-book-low-latency/pull/19
-
-Problem: Every addOrder() call created new ArrayList<>() for the
-return value, even when no trades occurred (~70% of orders in a typical book).
-Empty ArrayList allocates ~64 bytes (header + backing Object[10]).
-
-Solution: Return Collections.emptyList() singleton on the no-match
-fast path. Lazy-initialise ArrayList(4) only when first match occurs.
-Pre-sized to 4 because most orders match 1-3 resting orders.
-
-Design insight: The initial implementation with an early-exit price check
-regressed the matching path by 19ns due to redundant TreeMap.firstKey()
-calls. Removed it — the while loop already handles the check. Lesson:
-measure every change; intuition about performance is unreliable.
-
-
-
-# Project Structure
-
-```aiignore
-src/main/java/org/example/
-├── model/
-│   ├── Instrument.java
-│   ├── Order.java
-│   ├── OrderType.java
-│   ├── Side.java
-│   └── Trade.java
-├── engine/
-│   └── OrderBook.java
-├── util/
-│   ├── IdGenerator.java
-│   └── Price.java
-├── benchmark/
-│   ├── LimitOrderBenchmark.java
-│   ├── MarketOrderBenchmark.java
-│   └── UUIDBenchmark.java
-└── Main.java
-
-src/test/java/org/example/
-├── model/
-│   ├── InstrumentTest.java
-│   ├── OrderTest.java
-│   ├── OrderTypeTest.java
-│   └── TradeTest.java
-├── engine/
-│   ├── OrderBookTest.java
-│   └── OrderMatchingTest.java
-└── util/
-    ├── IdGeneratorTest.java
-    └── PriceTest.java
-```
-
-
-# Running Execution
-
-## Tests
-```aiignore
-mvn test
-```
-
-## Benchmarks
-
-```aiignore
-mvn clean package
-java -jar target/limit_order_book_engine-1.0-SNAPSHOT.jar -prof gc
-```
-
-## Single Benchmark Class
-
-```aiignore
-java -jar target/limit_order_book_engine-1.0-SNAPSHOT.jar LimitOrderBenchmark -prof gc
-java -jar target/limit_order_book_engine-1.0-SNAPSHOT.jar MarketOrderBenchmark -prof gc
-```
+## 6. Technical Highlights
+*   **Deterministic Execution:** The combination of `TreeMap` and `ArrayDeque` ensures $O(\log N)$ price discovery and $O(1)$ time-priority access.
+*   **Zero Precision Loss:** By scaling prices to integers, the system avoids the common `0.1 + 0.2 = 0.30000000000000004` error found in financial software.
+*   **Extensibility:** Because the engine depends on the `BaseOrderBook` interface, the matching algorithm (e.g., moving from FIFO to Pro-Rata) can be swapped without modifying the rest of the system.
