@@ -15,12 +15,12 @@ public class Instrument {
     private final int lotSize;
 
     /*
-    *  Asset-class agnostic
-    *  Equities:   Instrument("AAPL", scale=100)         → tick 0.01
-    *  Forex:      Instrument("EUR/USD", scale=100_000)   → tick 0.00001
-    *  Crypto:     Instrument("BTC/USD", scale=100)       → tick 0.01
-    *  Futures:    Instrument("ES", scale=4)              → tick 0.25
-    * */
+      Asset-class agnostic
+      Equities:   Instrument("AAPL", scale=100)         → tick 0.01
+      Forex:      Instrument("EUR/USD", scale=100_000)   → tick 0.00001
+      Crypto:     Instrument("BTC/USD", scale=100)       → tick 0.01
+      Futures:    Instrument("ES", scale=4)              → tick 0.25
+    */
 
     public Instrument(String symbol, int scale, int lotSize) {
         if (symbol == null || symbol.isEmpty()) {
