@@ -1,4 +1,4 @@
-package org.example.model;
+package org.example.domain.enums;
 
 /**
  * FIX 4.4 Tag 40 (OrdType).
@@ -18,10 +18,10 @@ public enum OrderType {
     }
 
     public static OrderType fromFixCode(char code) {
-        switch (code) {
-            case '1': return MARKET;
-            case '2': return LIMIT;
-            default: throw new IllegalArgumentException("Unknown FIX OrdType code: " + code);
-        }
+        return switch (code) {
+            case '1' -> MARKET;
+            case '2' -> LIMIT;
+            default  -> throw new IllegalArgumentException("Unknown FIX OrdType: " + code);
+        };
     }
 }

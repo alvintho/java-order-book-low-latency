@@ -1,10 +1,12 @@
-package org.example.model;
+package org.example.domain.model;
 
+import org.example.domain.enums.OrderType;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class OrderTypeTest {
+class OrderTypeTest {
+
     @Test
     void shouldHaveLimitType() {
         assertEquals("LIMIT", OrderType.LIMIT.name());
@@ -23,7 +25,7 @@ public class OrderTypeTest {
 
     @Test
     void shouldParseFromFixCode() {
-        assertEquals(OrderType.LIMIT, OrderType.fromFixCode('2'));
+        assertEquals(OrderType.LIMIT,  OrderType.fromFixCode('2'));
         assertEquals(OrderType.MARKET, OrderType.fromFixCode('1'));
     }
 

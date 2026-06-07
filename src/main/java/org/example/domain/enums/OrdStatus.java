@@ -1,4 +1,4 @@
-package org.example.model;
+package org.example.domain.enums;
 
 /**
  * FIX 4.4 Tag 39 (OrdStatus).
@@ -21,13 +21,13 @@ public enum OrdStatus {
     }
 
     public static OrdStatus fromFixCode(char code) {
-        switch (code) {
-            case '0': return NEW;
-            case '1': return PARTIALLY_FILLED;
-            case '2': return FILLED;
-            case '4': return CANCELED;
-            case '8': return REJECTED;
-            default: throw new IllegalArgumentException("Unknown FIX OrdStatus code: " + code);
-        }
+        return switch (code) {
+            case '0' -> NEW;
+            case '1' -> PARTIALLY_FILLED;
+            case '2' -> FILLED;
+            case '4' -> CANCELED;
+            case '8' -> REJECTED;
+            default  -> throw new IllegalArgumentException("Unknown FIX OrdStatus: " + code);
+        };
     }
 }

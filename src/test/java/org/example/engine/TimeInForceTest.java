@@ -1,6 +1,13 @@
 package org.example.engine;
 
-import org.example.model.*;
+import org.example.domain.enums.OrdStatus;
+import org.example.domain.enums.OrderType;
+import org.example.domain.enums.Side;
+import org.example.domain.enums.TimeInForce;
+import org.example.domain.model.Instrument;
+import org.example.domain.model.Order;
+import org.example.domain.model.Trade;
+import org.example.domain.port.BaseOrderBook;
 import org.example.util.IdGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,141 +16,148 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TimeInForceTest {
-    private OrderBook orderBook;
+class TimeInForceTest {
+
+    private BaseOrderBook  book;
     private IdGenerator idGen;
-    private int scale;
+    private int        scale;
 
     @BeforeEach
     void setUp() {
         Instrument instrument = new Instrument("AAPL", 100, 1);
         scale = instrument.getScale();
-        orderBook = new OrderBook(instrument);
+        book  = new PriceTimePriorityOrderBook(instrument, new IdGenerator(), r -> {});
         idGen = new IdGenerator();
     }
 
-    // ── IOC tests ──
+    private Order iocBuy(double price, double qty) {
+        return new Order.Builder(idGen.next(), Side.BUY, OrderType.LIMIT, qty)
+                .price(org.example.util.Price.toLong(price, scale))
+                .timeInForce(TimeInForce.IOC)
+                .build();
+    }
+
+    private Order fokBuy(double price, double qty) {
+        return new Order.Builder(idGen.next(), Side.BUY, OrderType.LIMIT, qty)
+                .price(org.example.util.Price.toLong(price, scale))
+                .timeInForce(TimeInForce.FOK)
+                .build();
+    }
+
+    // ── IOC ───────────────────────────────────────────────────────────────────
 
     @Test
     void iocShouldFillCompletelyWhenLiquidityAvailable() {
-        orderBook.addOrder(Order.limitSell(idGen.next(), 100.0, 10.0, scale));
+        book.addOrder(Order.limitSell(idGen.next(), 100.0, 10.0, scale));
 
-        Order iocBuy = new Order.Builder(idGen.next(), Side.BUY, OrderType.LIMIT, 10.0)
-                .price(10000L)
-                .timeInForce(TimeInForce.IOC)
-                .build();
-        List<Trade> trades = orderBook.addOrder(iocBuy);
+        Order ioc = iocBuy(100.0, 10.0);
+        List<Trade> trades = book.addOrder(ioc);
 
-        assertEquals(1, trades.size());
-        assertEquals(10.0, trades.getFirst().getQuantity());
-        assertTrue(iocBuy.isFilled());
-        assertEquals(0.0, orderBook.getTotalVolume());
+        assertEquals(1,    trades.size());
+        assertEquals(10.0, trades.getFirst().getQuantity(), 1e-12);
+        assertTrue(ioc.isFilled());
+        assertEquals(OrdStatus.FILLED, ioc.getOrdStatus());
+        assertEquals(0.0, book.getTotalVolume(), 1e-12);
     }
 
     @Test
     void iocShouldPartialFillAndCancelRemainder() {
-        orderBook.addOrder(Order.limitSell(idGen.next(), 100.0, 5.0, scale));
+        book.addOrder(Order.limitSell(idGen.next(), 100.0, 5.0, scale));
 
-        Order iocBuy = new Order.Builder(idGen.next(), Side.BUY, OrderType.LIMIT, 10.0)
-                .price(10000L)
-                .timeInForce(TimeInForce.IOC)
-                .build();
-        List<Trade> trades = orderBook.addOrder(iocBuy);
+        Order ioc = iocBuy(100.0, 10.0);
+        List<Trade> trades = book.addOrder(ioc);
 
-        assertEquals(1, trades.size());
-        assertEquals(5.0, trades.getFirst().getQuantity());
-        // Remainder cancelled — not resting in book
-        assertNull(orderBook.getOrder(iocBuy.getOrderId()));
-        assertEquals(OrdStatus.CANCELED, iocBuy.getOrdStatus());
-        assertEquals(0.0, orderBook.getTotalVolume());
+        assertEquals(1,   trades.size());
+        assertEquals(5.0, trades.getFirst().getQuantity(), 1e-12);
+        assertNull(book.getOrder(ioc.getOrderId()), "IOC remainder must not rest in book");
+        assertEquals(OrdStatus.CANCELED, ioc.getOrdStatus());
+        assertEquals(0.0, book.getTotalVolume(), 1e-12);
     }
 
     @Test
     void iocShouldCancelImmediatelyWhenNoLiquidity() {
-        Order iocBuy = new Order.Builder(idGen.next(), Side.BUY, OrderType.LIMIT, 10.0)
-                .price(10000L)
-                .timeInForce(TimeInForce.IOC)
-                .build();
-        List<Trade> trades = orderBook.addOrder(iocBuy);
+        Order ioc = iocBuy(100.0, 10.0);
+        List<Trade> trades = book.addOrder(ioc);
 
         assertTrue(trades.isEmpty());
-        assertNull(orderBook.getOrder(iocBuy.getOrderId()));
-        assertEquals(OrdStatus.CANCELED, iocBuy.getOrdStatus());
-        assertEquals(0.0, orderBook.getTotalVolume());
+        assertNull(book.getOrder(ioc.getOrderId()));
+        assertEquals(OrdStatus.CANCELED, ioc.getOrdStatus());
+        assertEquals(0.0, book.getTotalVolume(), 1e-12);
     }
 
-    // ── FOK tests ──
+    // ── FOK ───────────────────────────────────────────────────────────────────
 
     @Test
     void fokShouldFillCompletelyWhenFullLiquidityAvailable() {
-        orderBook.addOrder(Order.limitSell(idGen.next(), 100.0, 10.0, scale));
+        book.addOrder(Order.limitSell(idGen.next(), 100.0, 10.0, scale));
 
-        Order fokBuy = new Order.Builder(idGen.next(), Side.BUY, OrderType.LIMIT, 10.0)
-                .price(10000L)
-                .timeInForce(TimeInForce.FOK)
-                .build();
-        List<Trade> trades = orderBook.addOrder(fokBuy);
+        Order fok = fokBuy(100.0, 10.0);
+        List<Trade> trades = book.addOrder(fok);
 
-        assertEquals(1, trades.size());
-        assertEquals(10.0, trades.getFirst().getQuantity());
-        assertTrue(fokBuy.isFilled());
-        assertEquals(0.0, orderBook.getTotalVolume());
+        assertEquals(1,    trades.size());
+        assertEquals(10.0, trades.getFirst().getQuantity(), 1e-12);
+        assertTrue(fok.isFilled());
+        assertEquals(0.0, book.getTotalVolume(), 1e-12);
     }
 
     @Test
     void fokShouldRejectWhenInsufficientLiquidity() {
-        orderBook.addOrder(Order.limitSell(idGen.next(), 100.0, 5.0, scale));
+        book.addOrder(Order.limitSell(idGen.next(), 100.0, 5.0, scale));
 
-        Order fokBuy = new Order.Builder(idGen.next(), Side.BUY, OrderType.LIMIT, 10.0)
-                .price(10000L)
-                .timeInForce(TimeInForce.FOK)
-                .build();
-        List<Trade> trades = orderBook.addOrder(fokBuy);
+        Order fok = fokBuy(100.0, 10.0);
+        List<Trade> trades = book.addOrder(fok);
 
         assertTrue(trades.isEmpty());
-        assertEquals(OrdStatus.CANCELED, fokBuy.getOrdStatus());
-        // Original sell should still be resting
-        assertEquals(5.0, orderBook.getTotalAskVolume());
+        assertEquals(OrdStatus.CANCELED, fok.getOrdStatus());
+        assertEquals(5.0, book.getTotalAskVolume(), 1e-12,
+                "Resting sell must be untouched after FOK rejection");
     }
 
     @Test
     void fokShouldRejectWhenNoLiquidity() {
-        Order fokBuy = new Order.Builder(idGen.next(), Side.BUY, OrderType.LIMIT, 10.0)
-                .price(10000L)
-                .timeInForce(TimeInForce.FOK)
-                .build();
-        List<Trade> trades = orderBook.addOrder(fokBuy);
+        Order fok = fokBuy(100.0, 10.0);
+        List<Trade> trades = book.addOrder(fok);
 
         assertTrue(trades.isEmpty());
-        assertEquals(OrdStatus.CANCELED, fokBuy.getOrdStatus());
-        assertEquals(0.0, orderBook.getTotalVolume());
+        assertEquals(OrdStatus.CANCELED, fok.getOrdStatus());
+        assertEquals(0.0, book.getTotalVolume(), 1e-12);
     }
 
     @Test
     void fokShouldFillAcrossMultiplePriceLevels() {
-        orderBook.addOrder(Order.limitSell(idGen.next(), 100.0, 5.0, scale));
-        orderBook.addOrder(Order.limitSell(idGen.next(), 101.0, 5.0, scale));
+        book.addOrder(Order.limitSell(idGen.next(), 100.0, 5.0, scale));
+        book.addOrder(Order.limitSell(idGen.next(), 101.0, 5.0, scale));
 
-        Order fokBuy = new Order.Builder(idGen.next(), Side.BUY, OrderType.LIMIT, 10.0)
-                .price(10100L) // willing to pay up to 101
-                .timeInForce(TimeInForce.FOK)
-                .build();
-        List<Trade> trades = orderBook.addOrder(fokBuy);
+        Order fok = fokBuy(101.0, 10.0);
+        List<Trade> trades = book.addOrder(fok);
 
         assertEquals(2, trades.size());
-        assertTrue(fokBuy.isFilled());
-        assertEquals(0.0, orderBook.getTotalVolume());
+        assertTrue(fok.isFilled());
+        assertEquals(0.0, book.getTotalVolume(), 1e-12);
     }
 
-    // ── GTC (default) ──
+    // ── GTC (default) ─────────────────────────────────────────────────────────
 
     @Test
-    void gtcShouldRestWhenNotFilled() {
-        Order gtcBuy = Order.limitBuy(idGen.next(), 100.0, 10.0, scale);
-        List<Trade> trades = orderBook.addOrder(gtcBuy);
+    void gtcShouldRestInBookWhenNotFilled() {
+        Order gtc = Order.limitBuy(idGen.next(), 100.0, 10.0, scale);
+        List<Trade> trades = book.addOrder(gtc);
 
         assertTrue(trades.isEmpty());
-        assertNotNull(orderBook.getOrder(gtcBuy.getOrderId()));
-        assertEquals(10.0, orderBook.getTotalBidVolume());
+        assertNotNull(book.getOrder(gtc.getOrderId()));
+        assertEquals(10.0, book.getTotalBidVolume(), 1e-12);
+    }
+
+    @Test
+    void gtcShouldRemainAfterPartialFill() {
+        book.addOrder(Order.limitSell(idGen.next(), 100.0, 3.0, scale));
+
+        Order gtc = Order.limitBuy(idGen.next(), 100.0, 10.0, scale);
+        book.addOrder(gtc);
+
+        assertNotNull(book.getOrder(gtc.getOrderId()),
+                "Partially filled GTC must remain in book");
+        assertEquals(7.0, gtc.getLeavesQty(), 1e-12);
+        assertEquals(7.0, book.getTotalBidVolume(), 1e-12);
     }
 }
